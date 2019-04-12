@@ -8,7 +8,7 @@ void updateEtherDream()
     parseDacStatus(byteBuffer, 0);
   } 
 
-  if (etherdream != null) {
+  //if (etherdream != null) {
     beginPoints();
 
     setColor(0,0,0);
@@ -31,17 +31,19 @@ void updateEtherDream()
       EdgeList scanEdgeList = data.edgeLists.get(currentEdgeList);
       scanEdgeList(scanEdgeList);
     }
+    visualizeLaser();
     
+  if (etherdream != null) {
     etherdream.write(commandPrepareStream());
     etherdream.write(commandWriteData());
     etherdream.write(commandBeginPlayback(0,60*pointCount));
+    
   }
 }
 
-int currentEdgeList = 0;
 
+int currentEdgeList = 0;
 void scanEdgeList(EdgeList edgeList) {
-  
   
   Vector2 first = data.points.get(edgeList.loop.get(0).index);
   Vector2 last = null;
@@ -142,6 +144,21 @@ class PointData {
 int         pointCount=0;
 PointData[] points;
 float       _r,_g,_b;
+
+
+// For visualization
+void visualizeLaser() {
+  strokeWeight(3);
+  println("pointCount: "+pointCount);
+  for(int i=0; i<pointCount-1; ++i) {
+    stroke(points[i].r / 256, points[i].g / 256, points[i].b / 256);
+    float x0 = width  * ((points[i].x / 65535.0 + 0.5f) % 1); 
+    float y0 = height * ((points[i].y / 65535.0 + 0.5f) % 1);
+    float x1 = width  * ((points[i + 1].x / 65535.0 + 0.5f) % 1); 
+    float y1 = height * ((points[i + 1].y / 65535.0 + 0.5f) % 1);
+    line(x0,y0,x1,y1);
+  }
+}
 
 void beginPoints() {
   pointCount=0;

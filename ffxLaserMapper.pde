@@ -183,7 +183,7 @@ void drawEdgeList(EdgeList edgeList, boolean toMouse)
 {
 	float   x = mouseX / (float)width;
 	float   y = mouseY / (float)height;
-
+  strokeWeight(1);
 	int count = edgeList.loop.size();
 	for(int i=0; i<count; ++i) {
 		Vector2 from = data.points.get(edgeList.loop.get(i).index);
