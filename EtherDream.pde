@@ -1,4 +1,6 @@
 
+
+int currentEdgeList = 0; 
 void updateEtherDream()
 {
   if (etherdream != null && etherdream.available() > 0) { 
@@ -8,13 +10,12 @@ void updateEtherDream()
     parseDacStatus(byteBuffer, 0);
   } 
 
-  //if (etherdream != null) {
-    beginPoints();
+  beginPoints();
 
-    setColor(0,0,0);
-    addPoint(0.5,0.5);
-    
-    
+  setColor(0,0,0);
+  addPoint(0.5,0.5);
+  
+  if (laserMouse) {
     float mx = (float)mouseX/width;
     float my = (float)mouseY/height;
     setColor(0,0,0);
@@ -24,47 +25,26 @@ void updateEtherDream()
     addPoint(mx,my);
     setColor(0,0,0);
     addPoint(mx,my);
+  }
     
-    if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())
-    {
-      println("current: " + currentEdgeList);
-      EdgeList scanEdgeList = data.edgeLists.get(currentEdgeList);
-      scanEdgeList(scanEdgeList);
-    }
-    visualizeLaser();
-    
+  if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())
+  {
+    println("current: " + currentEdgeList);
+    EdgeList scanEdgeList = data.edgeLists.get(currentEdgeList);
+    scanEdgeList(scanEdgeList);
+  }
+
   if (etherdream != null) {
     etherdream.write(commandPrepareStream());
     etherdream.write(commandWriteData());
     etherdream.write(commandBeginPlayback(0,60*pointCount));
-    
   }
+  
+  visualizeLaser();
 }
 
 
-int currentEdgeList = 0;
-void scanEdgeList(EdgeList edgeList) {
-  
-  Vector2 first = data.points.get(edgeList.loop.get(0).index);
-  Vector2 last = null;
-  
-  setColor(0,0,0);
-  addPoint(first.x,first.y);
-  setColor(1,1,1);
-  
-  int count = edgeList.loop.size();
-  for(int i=0; i<count; ++i) {
-    Vector2 point = data.points.get(edgeList.loop.get(i).index);
-    last = point;
-    addPoint(point.x, point.y);
-  }  
-  
-  if(last != null)
-  {
-    setColor(0,0,0);
-    addPoint(last.x, last.y);
-  }
-}
+
 
 public static int unsignedByte(byte b) {
   return b & 0xFF;
@@ -148,6 +128,8 @@ float       _r,_g,_b;
 
 // For visualization
 void visualizeLaser() {
+  if(!drawLaser) return;
+  
   strokeWeight(3);
   println("pointCount: "+pointCount);
   for(int i=0; i<pointCount-1; ++i) {
@@ -157,6 +139,7 @@ void visualizeLaser() {
     float x1 = width  * ((points[i + 1].x / 65535.0 + 0.5f) % 1); 
     float y1 = height * ((points[i + 1].y / 65535.0 + 0.5f) % 1);
     line(x0,y0,x1,y1);
+    rect(x0-2,y0-2,4,4);
   }
 }
 

@@ -28,6 +28,9 @@ boolean         mouseUp;
 boolean         wasMousePressed;
 boolean         keyWasPressed;
 
+boolean         laserMouse = true;
+boolean         drawLaser = true;
+
 // tag edges
 // select [tags]
 // execute pattern with params
