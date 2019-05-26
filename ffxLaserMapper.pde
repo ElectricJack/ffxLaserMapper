@@ -12,7 +12,7 @@ Client   etherdream;
 //PeasyCam cam;
 
 final String  fileName = "mapping.json";
-final boolean log      = true;
+final boolean log      = false;
 
 Mapping         data      = new Mapping();
 JSONSerializer  store     = null;
@@ -46,6 +46,7 @@ boolean         drawLaser = true;
 // Need to be able to preview the path with the laser and align it to the geometry
 
 
+LaserPath path;
 
 void setup()
 {
@@ -62,6 +63,8 @@ void setup()
 	udp.listen( true );
 
 	loadData();
+	path = new LaserPath("accelerator-path.obj");
+
 	frameRate(60);
 }
 
@@ -81,14 +84,15 @@ void draw()
 	wasMousePressed = mousePressed;
 
 
+	placeLaserPath();
 
 	if      (editMode == 0) updateEditPoints();
 	else if (editMode == 1) updateEditEdges();
+	//else if (editMode == 2) placeLaserPath();
+
 
 	keyWasPressed = keyPressed;
 }
-
-
 
 
 
@@ -97,18 +101,31 @@ void keyPressed()
 {
 	if      (key == '1') editMode = 0;
 	else if (key == '2') editMode = 1;
+	//else if (key == '3') editMode = 2;
 
+	if (keyCode == LEFT) ++currentEdgeList;
+	if (keyCode == RIGHT) --currentEdgeList;
 
-  if (keyCode == LEFT) ++currentEdgeList;
-  if (keyCode == RIGHT) --currentEdgeList;
-  
-  int count = data.edgeLists.size();
-  if(count > 0) {
-    currentEdgeList = (currentEdgeList + count) % count;
- // println("count: "+count);
-  }
+	int count = data.edgeLists.size();
+	if(count > 0) {
+		currentEdgeList = (currentEdgeList + count) % count;
+		// println("count: "+count);
+	}
 }
 
+float time;
+void placeLaserPath()
+{
+	path.draw();
+
+	time += 0.001;
+	time %= 1.0;
+	Vector2 at = path.getPositionAtTime(time);
+	if (at != null) {
+		fill(255);
+		ellipse(at.x, at.y, 5,5);
+	}
+}
 
 void updateEditPoints()
 {
@@ -123,35 +140,16 @@ void updateEditPoints()
 	// Shift-click to delete
 	if (mouseUp && keyPressed && keyCode == SHIFT)
 	{
-		println("delete point");
-
-		int hoverIndex = data.points.indexOf(hover);
-		for(int i=0; i<data.edgeLists.size(); ++i) {
-			EdgeList edgeList = data.edgeLists.get(i);
-			for (int j=edgeList.loop.size()-1; j >= 0; --j) {
-				PointIndex pi = edgeList.loop.get(j);
-				if(pi.index == hoverIndex) {
-					edgeList.loop.remove(pi);
-				}
-			}
-		}
-		data.points.remove(hover);
-
-		saveData();
+		removePoint(hover);
 	}
-
 	// Click to add points
 	else if (mouseUp) {
-		println("add point "  + wasMousePressed + ", " + (!mousePressed) + ", " + (!dragging));
-		data.points.add(new Vector2(x,y));
-		saveData();
+		addPoint(new Vector2(x,y), true);
 	}
 
 	// Drag to move points
 	else if (dragging && hover != null) {
-		println("moving point");
 		hover.set(x, y);
-		//saveData();
 	}
 
 	drawAllEdgeLists();
@@ -166,7 +164,9 @@ void updateEditEdges()
 	drawPoints();
 
 	if (mouseUp && hover != null) {
-		activeEdgeList.loop.add(indexOfPoint(hover));
+		PointIndex hoverIndex = indexOfPoint(hover);
+		if (hoverIndex != null)
+			activeEdgeList.loop.add(hoverIndex);
 	}
 
 	if (keyPressed && !keyWasPressed && keyCode == ENTER) {
@@ -194,23 +194,30 @@ void drawAllEdgeLists()
 
 void drawEdgeList(EdgeList edgeList, boolean toMouse)
 {
-	float   x = mouseX / (float)width;
-	float   y = mouseY / (float)height;
+  float   x = mouseX / (float)width;
+  float   y = mouseY / (float)height;
+
   strokeWeight(1);
 	int count = edgeList.loop.size();
 	for(int i=0; i<count; ++i) {
-		Vector2 from = data.points.get(edgeList.loop.get(i).index);
+		int fromIndex = edgeList.loop.get(i).index;
+		if(fromIndex >= data.points.size()) continue;
+
+		Vector2 from = data.points.get(fromIndex);
 		Vector2 to   = null;
 
 		if (i+1 < count) {
-			to = data.points.get(edgeList.loop.get(i+1).index);
+			int toIndex = edgeList.loop.get(i+1).index;
+			if(toIndex >= data.points.size()) continue;
+			
+			to = data.points.get(toIndex);
 		} else if (toMouse) {
 			to = new Vector2(x,y);
 		}
 
     if (to != null)
 		  line(from.x*width, from.y*height, to.x*width, to.y*height);
-	}	
+	}
 }
 
 void updateHoverPoint()
@@ -219,7 +226,7 @@ void updateHoverPoint()
 	float   y = mouseY / (float)height;
 
 	if (!dragging) {
-		hover = data.findClosestPoint(x,y,30.0/width);
+		hover = findClosestPoint(x,y,30.0/width);
 	}
 
 	// Draw the hover
@@ -229,17 +236,15 @@ void updateHoverPoint()
 	}
 }
 
-PointIndex  indexOfPoint(Vector2 pt)    { return new PointIndex(data.points.indexOf(pt)); }
-void        loadData()                  { try {store.load(sketchPath(fileName), data);} catch(Exception e) {} }
-void        saveData()                  { store.save(sketchPath(fileName), data); }
+
 
 void drawPoints()
 {
 	fill(255);
 	noStroke();
 	float s = 2;
-	for (int i=0; i<data.points.size(); ++i) {
-		Vector2 point = data.points.get(i);
+	for (int i=0; i<movablePoints.size(); ++i) {
+		Vector2 point = movablePoints.get(i);
 		drawPoint(point, s);
 	}
 }

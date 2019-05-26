@@ -135,7 +135,6 @@ void visualizeLaser() {
   if(!drawLaser) return;
   
   strokeWeight(3);
-  println("pointCount: "+pointCount);
   for(int i=0; i<pointCount-1; ++i) {
     stroke(points[i].r / 256, points[i].g / 256, points[i].b / 256);
     float x0 = width  * ((points[i].x / 65535.0 + 0.5f) % 1); 
@@ -194,7 +193,7 @@ byte[] commandWriteData() {
   //  struct dac_point data[];
   //};
 
-  println("Sending points: "+pointCount);
+  //println("Sending points: "+pointCount);
   
   byte[] byteBuffer = new byte[3 + 18*pointCount];
   byteBuffer[0] = 'd';
