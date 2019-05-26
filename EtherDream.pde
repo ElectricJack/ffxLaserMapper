@@ -1,68 +1,54 @@
 
+
+int currentEdgeList = 0; 
 void updateEtherDream()
 {
   if (etherdream != null && etherdream.available() > 0) { 
     byte[] byteBuffer = new byte[32];
     int byteCount = etherdream.readBytes(byteBuffer);
-    println("byte count: " + byteCount);
+    //println("byte count: " + byteCount);
     parseDacStatus(byteBuffer, 0);
   } 
 
-  if (etherdream != null) {
-    beginPoints();
+  beginPoints();
 
-    setColor(0,0,0);
-    addPoint(0.5,0.5);
-    
-    
+  //setColor(0,0,0);
+  //for(int i=0; i<10; ++i){
+  //  addPoint(-0.5,-0.5);
+  //}
+  
+  if (laserMouse) {
     float mx = (float)mouseX/width;
     float my = (float)mouseY/height;
-    setColor(0,0,0);
-    addPoint(mx,my);
+    //clear();
+    
     setColor(1,1,1);
-    addPoint(mx,my);
-    addPoint(mx,my);
-    setColor(0,0,0);
-    addPoint(mx,my);
+    for(int i=0; i<5; ++i)
+      addPoint(mx,my);
+
+    //clear();
+  }
     
-    if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())
-    {
-      println("current: " + currentEdgeList);
-      EdgeList scanEdgeList = data.edgeLists.get(currentEdgeList);
-      scanEdgeList(scanEdgeList);
-    }
+  if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())
+  {
+    println("current: " + currentEdgeList);
+    EdgeList scanEdgeList = data.edgeLists.get(currentEdgeList);
+    scanEdgeList(scanEdgeList);
     
+    //clear();
+  }
+
+  if (etherdream != null) {
     etherdream.write(commandPrepareStream());
     etherdream.write(commandWriteData());
-    etherdream.write(commandBeginPlayback(0,60*pointCount));
+    etherdream.write(commandBeginPlayback(0,5000));
   }
+  
+  visualizeLaser();
 }
 
-int currentEdgeList = 0;
 
-void scanEdgeList(EdgeList edgeList) {
-  
-  
-  Vector2 first = data.points.get(edgeList.loop.get(0).index);
-  Vector2 last = null;
-  
-  setColor(0,0,0);
-  addPoint(first.x,first.y);
-  setColor(1,1,1);
-  
-  int count = edgeList.loop.size();
-  for(int i=0; i<count; ++i) {
-    Vector2 point = data.points.get(edgeList.loop.get(i).index);
-    last = point;
-    addPoint(point.x, point.y);
-  }  
-  
-  if(last != null)
-  {
-    setColor(0,0,0);
-    addPoint(last.x, last.y);
-  }
-}
+
 
 public static int unsignedByte(byte b) {
   return b & 0xFF;
@@ -142,6 +128,32 @@ class PointData {
 int         pointCount=0;
 PointData[] points;
 float       _r,_g,_b;
+
+
+// For visualization
+void visualizeLaser() {
+  if(!drawLaser) return;
+  
+  strokeWeight(3);
+  println("pointCount: "+pointCount);
+  for(int i=0; i<pointCount-1; ++i) {
+    stroke(points[i].r / 256, points[i].g / 256, points[i].b / 256);
+    float x0 = width  * ((points[i].x / 65535.0 + 0.5f) % 1); 
+    float y0 = height * ((points[i].y / 65535.0 + 0.5f) % 1);
+    float x1 = width  * ((points[i + 1].x / 65535.0 + 0.5f) % 1); 
+    float y1 = height * ((points[i + 1].y / 65535.0 + 0.5f) % 1);
+    line(x0,y0,x1,y1);
+    rect(x0-2,y0-2,4,4);
+  }
+}
+
+void clear()
+{
+  PointData last = points[points.length-1];
+  setColor(0,0,0);
+  for(int i=0; i<4; ++i)
+    addPoint(last.x, last.y);
+}
 
 void beginPoints() {
   pointCount=0;
