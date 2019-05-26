@@ -3,8 +3,8 @@ void scanEdgeList(EdgeList edgeList) {
   Vector2 first = data.points.get(edgeList.loop.get(0).index);
   Vector2 last = null;
   
-  setColor(0,0,0);
-  addPoint(first.x,first.y);
+  //setColor(0,0,0);
+  //addPoint(first.x,first.y);
   setColor(1,1,1);
   
   int scanType = 1;
@@ -22,11 +22,11 @@ void scanEdgeList(EdgeList edgeList) {
     //addPoint(point.x, point.y);
   }  
   
-  if(last != null)
-  {
-    setColor(0,0,0);
-    addPoint(last.x, last.y);
-  }
+  //if(last != null)
+  //{
+  //  setColor(0,0,0);
+  //  addPoint(last.x, last.y);
+  //}
 }
 
 void scanBasic(Vector2 from, Vector2 to)

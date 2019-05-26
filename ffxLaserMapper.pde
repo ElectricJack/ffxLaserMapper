@@ -5,14 +5,14 @@ import java.util.List;
 
 import hypermedia.net.*; // import UDP library
 import processing.net.*; // import TCP library 
-//import peasy.*;
+
 
 UDP      udp;        // UDP Listener
 Client   etherdream;
 //PeasyCam cam;
 
 final String  fileName = "mapping.json";
-final boolean log      = false;
+final boolean log      = true;
 
 Mapping         data      = new Mapping();
 JSONSerializer  store     = null;
@@ -28,12 +28,22 @@ boolean         mouseUp;
 boolean         wasMousePressed;
 boolean         keyWasPressed;
 
-boolean         laserMouse = true;
+boolean         laserMouse = false;
 boolean         drawLaser = true;
 
 // tag edges
 // select [tags]
 // execute pattern with params
+
+
+// Need to be able to trigger different edges with effects from different OSC triggers   enable/disable for each edge/effect
+// Need to be able to playback motion of laser over a calibrated laser path. Hard-coded duration for the playback, option to stop/loop
+//   - Already prototyped loading the laser path
+//   - Need to be able to interpolate the path based on a function of the entire paths length.
+//     - On initialization calculate all edge lengths and store at the start of each vertex
+//     - To find a location in time t from 0-1, multiply by total path length, then keep subtracting edge lengths until you fall within an edge length
+// Need the ability to trigger more than one laser loop path animation at a time
+// Need to be able to preview the path with the laser and align it to the geometry
 
 
 
@@ -141,7 +151,7 @@ void updateEditPoints()
 	else if (dragging && hover != null) {
 		println("moving point");
 		hover.set(x, y);
-		saveData();
+		//saveData();
 	}
 
 	drawAllEdgeLists();

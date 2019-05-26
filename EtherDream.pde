@@ -6,25 +6,27 @@ void updateEtherDream()
   if (etherdream != null && etherdream.available() > 0) { 
     byte[] byteBuffer = new byte[32];
     int byteCount = etherdream.readBytes(byteBuffer);
-    println("byte count: " + byteCount);
+    //println("byte count: " + byteCount);
     parseDacStatus(byteBuffer, 0);
   } 
 
   beginPoints();
 
-  setColor(0,0,0);
-  addPoint(0.5,0.5);
+  //setColor(0,0,0);
+  //for(int i=0; i<10; ++i){
+  //  addPoint(-0.5,-0.5);
+  //}
   
   if (laserMouse) {
     float mx = (float)mouseX/width;
     float my = (float)mouseY/height;
-    setColor(0,0,0);
-    addPoint(mx,my);
+    //clear();
+    
     setColor(1,1,1);
-    addPoint(mx,my);
-    addPoint(mx,my);
-    setColor(0,0,0);
-    addPoint(mx,my);
+    for(int i=0; i<5; ++i)
+      addPoint(mx,my);
+
+    //clear();
   }
     
   if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())
@@ -32,12 +34,14 @@ void updateEtherDream()
     println("current: " + currentEdgeList);
     EdgeList scanEdgeList = data.edgeLists.get(currentEdgeList);
     scanEdgeList(scanEdgeList);
+    
+    //clear();
   }
 
   if (etherdream != null) {
     etherdream.write(commandPrepareStream());
     etherdream.write(commandWriteData());
-    etherdream.write(commandBeginPlayback(0,60*pointCount));
+    etherdream.write(commandBeginPlayback(0,5000));
   }
   
   visualizeLaser();
@@ -141,6 +145,14 @@ void visualizeLaser() {
     line(x0,y0,x1,y1);
     rect(x0-2,y0-2,4,4);
   }
+}
+
+void clear()
+{
+  PointData last = points[points.length-1];
+  setColor(0,0,0);
+  for(int i=0; i<4; ++i)
+    addPoint(last.x, last.y);
 }
 
 void beginPoints() {
