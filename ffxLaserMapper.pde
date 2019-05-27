@@ -36,17 +36,35 @@ boolean         drawLaser = true;
 // execute pattern with params
 
 
+// Done:
+	// Draw the laser path
+
+	// Need to be able to playback motion of laser over a calibrated laser path. Hard-coded duration for the playback, option to stop/loop
+	//   - Already prototyped loading the laser path
+	//   - Need to be able to interpolate the path based on a function of the entire paths length.
+	//     - On initialization calculate all edge lengths and store at the start of each vertex
+	//     - To find a location in time t from 0-1, multiply by total path length, then keep subtracting edge lengths until you fall within an edge length
+
+	// Need to be able to preview the path with the laser and align it to the geometry
+
+//------------------------------------------------
+// Todo:
+
+	// Serialize the location of the laser path object
+	// Set start index for the animation and length of animation
+
+	// - Get the OSC playback time from that clip from resolume??
+	//   - This would be ultimate sync system
+
+
+	// Have laser path
+
 // Need to be able to trigger different edges with effects from different OSC triggers   enable/disable for each edge/effect
-// Need to be able to playback motion of laser over a calibrated laser path. Hard-coded duration for the playback, option to stop/loop
-//   - Already prototyped loading the laser path
-//   - Need to be able to interpolate the path based on a function of the entire paths length.
-//     - On initialization calculate all edge lengths and store at the start of each vertex
-//     - To find a location in time t from 0-1, multiply by total path length, then keep subtracting edge lengths until you fall within an edge length
-// Need the ability to trigger more than one laser loop path animation at a time
-// Need to be able to preview the path with the laser and align it to the geometry
 
+// Stretch:
+//  - Need the ability to trigger more than one laser loop path animation at a time
 
-LaserPath path;
+//LaserPath path;
 
 void setup()
 {
@@ -58,20 +76,26 @@ void setup()
 	store.registerType(new EdgeList());
 	store.registerType(new PointIndex());
 	store.registerType(new Vector2());
+	store.registerType(new LaserPath());
 
 	//udp.log( true ); 		// <-- printout the connection activity
 	udp.listen( true );
 
 	loadData();
-	path = new LaserPath("accelerator-path.obj");
+	if (!data.path.isLoaded())
+		data.path.load(data.path.sourcePath);
 
 	frameRate(60);
 }
 
+int updateSampler=0;
 void draw()
 {
 	background(100);
-	updateEtherDream();
+
+	updateSampler++;
+	if((updateSampler % 4) == 0)
+		updateEtherDream();
 
   // Control logic
 	mouseDown = !wasMousePressed && mousePressed;
@@ -82,7 +106,6 @@ void draw()
 	dragging = wasMousePressed && startDrag.sub(mouseX, mouseY).len() > 0;
 	mouseUp  = wasMousePressed && !mousePressed && !dragging;
 	wasMousePressed = mousePressed;
-
 
 	placeLaserPath();
 
@@ -116,11 +139,11 @@ void keyPressed()
 float time;
 void placeLaserPath()
 {
-	path.draw();
+	data.path.draw();
 
 	time += 0.001;
 	time %= 1.0;
-	Vector2 at = path.getPositionAtTime(time);
+	Vector2 at = data.path.getPositionAtTime(time);
 	if (at != null) {
 		fill(255);
 		ellipse(at.x, at.y, 5,5);
@@ -209,7 +232,7 @@ void drawEdgeList(EdgeList edgeList, boolean toMouse)
 		if (i+1 < count) {
 			int toIndex = edgeList.loop.get(i+1).index;
 			if(toIndex >= data.points.size()) continue;
-			
+
 			to = data.points.get(toIndex);
 		} else if (toMouse) {
 			to = new Vector2(x,y);

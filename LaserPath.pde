@@ -1,16 +1,35 @@
 
-class LaserPath
+class LaserPath implements Serializable
 {
-  LaserPath(String path) { load(path); }
-  
 
-  public Vector2 center = new Vector2();
-  public Vector2 top    = new Vector2();
-  public Vector2 right  = new Vector2();
+  ArrayList<LaserVert> verts = new ArrayList<LaserVert>();
 
-  public Vector2 size   = new Vector2(400, 400);
+  public String  sourcePath = "accelerator-path.obj";
+
+  public Vector2 lastCenter = new Vector2();
+  public Vector2 center     = new Vector2();
+  public Vector2 top        = new Vector2();
+  public Vector2 right      = new Vector2();
+
+  public Vector2 size       = new Vector2(400, 400);
   public float   rotation;
 
+
+  public LaserPath clone()   { return new LaserPath(); }
+  public String    getType() { return "LaserPath"; }
+  public void serialize(Serializer s)
+  {
+    sourcePath = s.serialize("sourcePath", sourcePath);
+    if (s.isLoading())
+    {
+      load(sourcePath);
+    }
+
+    s.serialize("center",  center);
+    s.serialize("size",    size);
+
+    rotation = s.serialize("rotation", rotation);
+  }
 
   
   private class LaserVert
@@ -26,8 +45,8 @@ class LaserPath
     }
   }
   
-  ArrayList<LaserVert> verts = new ArrayList<LaserVert>();
   
+  boolean isLoaded() { return verts.size() > 0; }
   void load(String path)
   {
     laserPath = loadShape(path);
@@ -63,7 +82,7 @@ class LaserPath
     // Init handles
     center.x = 0.5;
     center.y = 0.5;
-    top.set(   center.sub(0.0f,               0.5*size.y / height));
+    top.set(   center.sub(0.0f, 0.5*size.y / height));
     right.set( center.add(0.5*size.x / width, 0.0f));
 
     addPoint(center, false);
@@ -73,21 +92,7 @@ class LaserPath
   
   void draw()
   {
-
-
-    if (center != hover){
-      size.x = right.sub(center).len() * width * 2.0;
-      size.y = top.sub(center).len() * height * 2.0;
-
-      rotation = right.sub(center).ang();
-    }
-
-    Vector2 topOff = new Vector2(0.0f, 0.5*size.y / height);
-    top.set(center.sub(topOff.rot(rotation)));
-    Vector2 rightOff = new Vector2(0.5*size.x / width, 0.0f);
-    right.set(center.add(rightOff.rot(rotation)));
-
-
+    updateTransform();
 
     stroke(255);
     strokeWeight(1);
@@ -97,19 +102,39 @@ class LaserPath
       applyTransform();
       rect(0,0,size.x,size.y);
 
-      int vertCount = laserPath.getVertexCount();
+      int vertCount = verts.size();
       for (int i=0; i<vertCount; ++i) {
         int i2 = (i+1) % vertCount;
 
         LaserVert cur  = verts.get(i);
         LaserVert next = verts.get(i2);
-        
+
         float x0 = cur.uv.x  * size.x;
         float y0 = cur.uv.y  * size.y;
         float x1 = next.uv.x * size.x;
         float y1 = next.uv.y * size.y;
 
         line(x0, y0, x1, y1);
+      }
+    popMatrix();
+  }
+
+
+
+  void scanPath()
+  {
+    setColor(1,1,1);
+
+    pushMatrix();
+      applyTransform();
+
+      for (int i=0; i<verts.size(); ++i) {
+        LaserVert cur = verts.get(i);
+        Vector2 at = new Vector2(
+          screenX(cur.uv.x*size.x, cur.uv.y*size.y, 0),
+          screenY(cur.uv.x*size.x, cur.uv.y*size.y, 0)
+        );
+        addPoint(at.x/width, at.y/height);
       }
     popMatrix();
   }
@@ -146,6 +171,22 @@ class LaserPath
     return uvResult;
   }
 
+  void updateTransform()
+  {
+    if (center.sub(lastCenter).len() < 0.0001f) {
+      size.x = right.sub(center).len() * width * 2.0;
+      size.y = top.sub(center).len() * height * 2.0;
+
+      rotation = right.sub(center).ang();
+    }
+
+    Vector2 topOff = new Vector2(0.0f, 0.5*size.y / height);
+    top.set(center.sub(topOff.rot(rotation)));
+    Vector2 rightOff = new Vector2(0.5*size.x / width, 0.0f);
+    right.set(center.add(rightOff.rot(rotation)));
+
+    lastCenter.set(center);
+  }
   void applyTransform()
   {
     translate(center.x*width, center.y*height, 0);

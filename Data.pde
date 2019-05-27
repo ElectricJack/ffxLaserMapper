@@ -29,23 +29,23 @@ class Mapping implements Serializable
 	// Points are stored in 0-1 space for the laser
 	public List<Vector2>  points    = new ArrayList<Vector2>();
 	public List<EdgeList> edgeLists = new ArrayList<EdgeList>();
+	public LaserPath      path      = new LaserPath();
 
 
 	public Mapping clone()   { return new Mapping(); }
 	public String  getType() { return "Mapping"; }
+	
 	public void serialize(Serializer s)
 	{
 		s.serialize("points",    points);
 		s.serialize("edgeLists", edgeLists);
+		s.serialize("path",      path);
 
 		if(s.isLoading())
 		{
 			movablePoints.addAll(points);
 		}
 	}
-
-
-
 }
 
 
@@ -107,5 +107,6 @@ PointIndex  indexOfPoint(Vector2 pt) {
 	if (index == -1) return null;
 	return new PointIndex(index);
 }
+
 void        loadData()                  { try {store.load(sketchPath(fileName), data);} catch(Exception e) {} }
 void        saveData()                  { store.save(sketchPath(fileName), data); }

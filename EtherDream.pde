@@ -28,6 +28,8 @@ void updateEtherDream()
 
     //clear();
   }
+
+  data.path.scanPath();
     
   if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())
   {
@@ -41,7 +43,8 @@ void updateEtherDream()
   if (etherdream != null) {
     etherdream.write(commandPrepareStream());
     etherdream.write(commandWriteData());
-    etherdream.write(commandBeginPlayback(0,5000));
+    //etherdream.write(commandBeginPlayback(0,5000));
+    etherdream.write(commandBeginPlayback(0,2000));
   }
   
   visualizeLaser();
