@@ -12,7 +12,8 @@ void updateEtherDream()
 
   beginPoints();
 
-  //setColor(0,0,0);
+  setColor(0,0,0);
+  addPoint(-0.5,-0.5);
   //for(int i=0; i<10; ++i){
   //  addPoint(-0.5,-0.5);
   //}
@@ -29,7 +30,8 @@ void updateEtherDream()
     //clear();
   }
 
-  data.path.scanPath();
+  scanPointOnPath();
+  //data.path.scanPath();
     
   if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())
   {

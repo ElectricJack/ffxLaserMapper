@@ -6,7 +6,10 @@ import java.util.List;
 import hypermedia.net.*; // import UDP library
 import processing.net.*; // import TCP library 
 
+import oscP5.*;
+import netP5.*;
 
+OscP5    oscP5;
 UDP      udp;        // UDP Listener
 Client   etherdream;
 //PeasyCam cam;
@@ -46,10 +49,6 @@ boolean         drawLaser = true;
 	//     - To find a location in time t from 0-1, multiply by total path length, then keep subtracting edge lengths until you fall within an edge length
 
 	// Need to be able to preview the path with the laser and align it to the geometry
-
-//------------------------------------------------
-// Todo:
-
 	// Serialize the location of the laser path object
 	// Set start index for the animation and length of animation
 
@@ -57,19 +56,30 @@ boolean         drawLaser = true;
 	//   - This would be ultimate sync system
 
 
-	// Have laser path
+//------------------------------------------------
+// Todo:
+	// - Separate edit mode for alignment (this way it doesn't get screwed up)
+	// 
 
-// Need to be able to trigger different edges with effects from different OSC triggers   enable/disable for each edge/effect
 
-// Stretch:
-//  - Need the ability to trigger more than one laser loop path animation at a time
+	// - Need to be able to set different point rendering speeds between paths
+  // - Need to change point speed for blanking at start/end
+	// - Implement charging animation
 
-//LaserPath path;
+	// Write some different laser animations
+		
+	// Need to be able to trigger different edges with effects from different OSC triggers   enable/disable for each edge/effect
+
+	// Stretch:
+	//  - Need the ability to trigger more than one laser loop path animation at a time
+
+
+
 
 void setup()
 {
 	size(800,600,P3D);
-
+  oscP5 = new OscP5(this,12000);
 	udp   = new UDP( this, 7654 );
 	store = new JSONSerializer(this);
 	store.registerType(new Mapping());
@@ -88,14 +98,14 @@ void setup()
 	frameRate(60);
 }
 
-int updateSampler=0;
+//int updateSampler=0;
 void draw()
 {
 	background(100);
 
-	updateSampler++;
-	if((updateSampler % 4) == 0)
-		updateEtherDream();
+	//updateSampler++;
+	//if((updateSampler % 4) == 0)
+	updateEtherDream();
 
   // Control logic
 	mouseDown = !wasMousePressed && mousePressed;
@@ -136,18 +146,27 @@ void keyPressed()
 	}
 }
 
-float time;
+float   time;
+boolean laserEnabled = false;
 void placeLaserPath()
 {
 	data.path.draw();
+}
 
-	time += 0.001;
-	time %= 1.0;
-	Vector2 at = data.path.getPositionAtTime(time);
-	if (at != null) {
-		fill(255);
-		ellipse(at.x, at.y, 5,5);
-	}
+void scanPointOnPath()
+{
+  if (!laserEnabled)
+    return;
+    
+  Vector2 at = data.path.getPositionAtTime(time);
+  if (at != null) {
+    fill(255,0,0);
+    ellipse(at.x, at.y, 10,10);
+    setColor(1,1,1);
+    addPoint(at.x/width, at.y/height);
+    addPoint(at.x/width, at.y/height);
+    addPoint(at.x/width, at.y/height);
+  }
 }
 
 void updateEditPoints()
@@ -278,4 +297,18 @@ void drawPoint(Vector2 point, float s)
 		translate(point.x * width, point.y * height);
 		rect(-s/2,-s/2,s,s);
 	popMatrix();
+}
+
+
+void oscEvent(OscMessage theOscMessage) {
+  /* check if theOscMessage has the address pattern we are looking for. */
+  
+  if(theOscMessage.checkAddrPattern("/composition/layers/2/clips/1/transport/position")==true) {
+  	float resolumeClipTime = theOscMessage.get(0).floatValue();
+		//0.325 to 1.273
+		time = map(resolumeClipTime, 0, 0.484, 0.325, 1.273);
+    laserEnabled = resolumeClipTime < 0.484;
+    println(""+ time + " " + resolumeClipTime);
+  } 
+  //println("### received an osc message. with address pattern "+theOscMessage.addrPattern());
 }

@@ -47,6 +47,7 @@ class LaserPath implements Serializable
   
   
   boolean isLoaded() { return verts.size() > 0; }
+
   void load(String path)
   {
     laserPath = loadShape(path);
@@ -54,7 +55,8 @@ class LaserPath implements Serializable
     laserPath = children[0];
   
     println("verts: " + laserPath.getVertexCount());
-    for(int i=0; i<laserPath.getVertexCount(); ++i) {
+    int totalVerts = laserPath.getVertexCount();
+    for(int i=0; i<totalVerts; ++i) {
       float u = laserPath.getTextureU(i);
       float v = laserPath.getTextureV(i);
       verts.add(new LaserVert(laserPath.getVertex(i), u, v));
@@ -62,22 +64,19 @@ class LaserPath implements Serializable
     
     // Calculate the worldspace distances to the next vertex
     float totalLength = 0;
-    for(int i=0; i<verts.size()-1; ++i) {
+    for(int i=0; i<totalVerts; ++i) {
       LaserVert cur  = verts.get(i);
-      LaserVert next = verts.get(i+1);
+      LaserVert next = verts.get((i+1)%totalVerts);
       cur.distToNext = next.pos.sub(cur.pos).len();
       totalLength += cur.distToNext;
     }
     
     float currentDist = 0;
-    for(int i=0; i<verts.size()-1; ++i) {
+    for(int i=0; i<totalVerts; ++i) {
       LaserVert cur = verts.get(i);
       cur.t = currentDist / totalLength;
       currentDist += cur.distToNext;
     }
-    
-    // Set the final t to 1
-    verts.get(verts.size()-1).t = 1;
 
     // Init handles
     center.x = 0.5;
@@ -119,8 +118,6 @@ class LaserPath implements Serializable
     popMatrix();
   }
 
-
-
   void scanPath()
   {
     setColor(1,1,1);
@@ -128,8 +125,9 @@ class LaserPath implements Serializable
     pushMatrix();
       applyTransform();
 
-      for (int i=0; i<verts.size(); ++i) {
-        LaserVert cur = verts.get(i);
+      int totalVerts = verts.size();
+      for (int i=0; i<=totalVerts; ++i) {
+        LaserVert cur = verts.get(i%totalVerts);
         Vector2 at = new Vector2(
           screenX(cur.uv.x*size.x, cur.uv.y*size.y, 0),
           screenY(cur.uv.x*size.x, cur.uv.y*size.y, 0)
@@ -141,21 +139,30 @@ class LaserPath implements Serializable
   
   Vector2 getPositionAtTime(float t)
   {
-    // Clamp 0-1
-    t = min(max(t,0),1);
+    // Wrap 0-1
+    t = t % 1.0f;//min(max(t,0),1);
     
     // Should do a binary search for performance but we are going to start with the trivial impl
     Vector2 uvResult = null;
 
-    for(int i=0; i<verts.size()-1; ++i)
+    int totalVerts = verts.size();
+    for(int i=0; i<totalVerts-1; ++i)
     {
       LaserVert v0 = verts.get(i);
       LaserVert v1 = verts.get(i+1);
-      if (t >= v0.t && t <= v1.t) {
+      if (t >= v0.t && t < v1.t) {
         float innerT = (t - v0.t) / (v1.t - v0.t);
         uvResult = (new Vector2()).lerp(v0.uv, v1.uv, innerT);
         break;
       }
+    }
+
+    // Handle wrapping back to start
+    LaserVert last = verts.get(totalVerts-1);
+    if(t >= last.t) {
+        float innerT = (t - last.t) / (1.0 - last.t);
+        LaserVert first = verts.get(0);
+        uvResult = (new Vector2()).lerp(last.uv, first.uv, innerT);
     }
     
     if(uvResult != null) {
@@ -187,6 +194,7 @@ class LaserPath implements Serializable
 
     lastCenter.set(center);
   }
+
   void applyTransform()
   {
     translate(center.x*width, center.y*height, 0);
