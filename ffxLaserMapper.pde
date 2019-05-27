@@ -33,6 +33,8 @@ boolean         keyWasPressed;
 
 boolean         laserMouse = false;
 boolean         drawLaser = true;
+int             currentEdgeList = 0; 
+boolean         drawLaserAnimationPath = false;
 
 // tag edges
 // select [tags]
@@ -55,19 +57,23 @@ boolean         drawLaser = true;
 	// - Get the OSC playback time from that clip from resolume??
 	//   - This would be ultimate sync system
 
+	// - Separate edit mode for alignment (this way it doesn't get screwed up)
+
 
 //------------------------------------------------
 // Todo:
-	// - Separate edit mode for alignment (this way it doesn't get screwed up)
-	// 
-
 
 	// - Need to be able to set different point rendering speeds between paths
-  // - Need to change point speed for blanking at start/end
-	// - Implement charging animation
 
+  // - Need to change point speed for blanking at start/end
+	// - Scan effects need to go all the way to the last point in the list
+	// - Blank the laser before moving to the animated track location
+	// - Make it so that you can't edit the laser path alignment points unless you are in the laser path mode
+
+
+	// - Implement charging animation
 	// Write some different laser animations
-		
+
 	// Need to be able to trigger different edges with effects from different OSC triggers   enable/disable for each edge/effect
 
 	// Stretch:
@@ -101,7 +107,8 @@ void setup()
 //int updateSampler=0;
 void draw()
 {
-	background(100);
+	colorMode(HSB,255);
+	background(color(editMode*40,100,100));
 
 	//updateSampler++;
 	//if((updateSampler % 4) == 0)
@@ -117,11 +124,11 @@ void draw()
 	mouseUp  = wasMousePressed && !mousePressed && !dragging;
 	wasMousePressed = mousePressed;
 
-	placeLaserPath();
+  data.path.draw();
 
 	if      (editMode == 0) updateEditPoints();
 	else if (editMode == 1) updateEditEdges();
-	//else if (editMode == 2) placeLaserPath();
+	else if (editMode == 2) updatePlaceLaserPath();
 
 
 	keyWasPressed = keyPressed;
@@ -134,7 +141,14 @@ void keyPressed()
 {
 	if      (key == '1') editMode = 0;
 	else if (key == '2') editMode = 1;
-	//else if (key == '3') editMode = 2;
+	else if (key == '3') editMode = 2;
+	else if (key == '4') editMode = 3;
+	else if (key == '5') editMode = 4;
+	else if (key == '6') editMode = 5;
+
+	if(key == 'a') { drawLaserAnimationPath = !drawLaserAnimationPath; println("drawLaserAnimationPath: " + drawLaserAnimationPath); }
+	if(key == 's') { laserMouse = !laserMouse; println("laserMouse: " + laserMouse); }
+	if(key == 'd') { drawLaser = !drawLaser; println("drawLaser: " + drawLaser); } 
 
 	if (keyCode == LEFT) ++currentEdgeList;
 	if (keyCode == RIGHT) --currentEdgeList;
@@ -146,12 +160,28 @@ void keyPressed()
 	}
 }
 
+
+void updatePlaceLaserPath()
+{
+	float   x = mouseX / (float)width;
+	float   y = mouseY / (float)height;
+
+	// Render all points on screen
+	noStroke();
+	updateHoverPoint();
+	drawPoints();
+
+	if (dragging && hover != null) {
+		hover.set(x, y);
+	}
+
+	drawAllEdgeLists();
+}
+
+
 float   time;
 boolean laserEnabled = false;
-void placeLaserPath()
-{
-	data.path.draw();
-}
+
 
 void scanPointOnPath()
 {
@@ -199,7 +229,6 @@ void updateEditPoints()
 
 void updateEditEdges()
 {
-
 	// Render all points on screen
 	noStroke();
 	updateHoverPoint();
@@ -219,6 +248,14 @@ void updateEditEdges()
     activeEdgeList = new EdgeList();
 	}
 
+	if (keyPressed && !keyWasPressed && keyCode == BACKSPACE)
+	{
+		println("delete active edge");
+		data.edgeLists.remove(currentEdgeList);
+		activeEdgeList = new EdgeList();
+		currentEdgeList = 0;
+	}
+
 	// Draw the active edge list
 	stroke(255,0,0);
 	drawEdgeList(activeEdgeList, true);
@@ -236,6 +273,9 @@ void drawAllEdgeLists()
 
 void drawEdgeList(EdgeList edgeList, boolean toMouse)
 {
+	if (edgeList == null)
+		return;
+
   float   x = mouseX / (float)width;
   float   y = mouseY / (float)height;
 
@@ -278,8 +318,6 @@ void updateHoverPoint()
 	}
 }
 
-
-
 void drawPoints()
 {
 	fill(255);
@@ -300,15 +338,34 @@ void drawPoint(Vector2 point, float s)
 }
 
 
+int laserEffectMode = 0;
 void oscEvent(OscMessage theOscMessage) {
-  /* check if theOscMessage has the address pattern we are looking for. */
   
-  if(theOscMessage.checkAddrPattern("/composition/layers/2/clips/1/transport/position")==true) {
+  if (theOscMessage.checkAddrPattern("/composition/layers/2/clips/1/transport/position")) {
   	float resolumeClipTime = theOscMessage.get(0).floatValue();
 		//0.325 to 1.273
 		time = map(resolumeClipTime, 0, 0.484, 0.325, 1.273);
     laserEnabled = resolumeClipTime < 0.484;
-    println(""+ time + " " + resolumeClipTime);
-  } 
-  //println("### received an osc message. with address pattern "+theOscMessage.addrPattern());
+    //println(""+ time + " " + resolumeClipTime);
+  }
+  else if (theOscMessage.checkAddrPattern("/composition/layers/3/clips/1/transport/position"))
+  {
+  	//println("effect 0");
+    laserEffectMode = 0;
+  }
+  else if (theOscMessage.checkAddrPattern("/composition/layers/3/clips/2/transport/position"))
+  {
+  	//println("effect 1");
+    laserEffectMode = 1;
+  }
+  else if (theOscMessage.checkAddrPattern("/composition/layers/3/clips/3/transport/position"))
+  {
+  	//println("effect 2");
+    laserEffectMode = 2;
+  }
+  else if (theOscMessage.checkAddrPattern("/composition/layers/3/clips/4/transport/position"))
+  {
+  	//println("effect 3");
+    laserEffectMode = 3;
+  }
 }

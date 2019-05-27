@@ -1,6 +1,7 @@
 
 
-int currentEdgeList = 0; 
+
+
 void updateEtherDream()
 {
   if (etherdream != null && etherdream.available() > 0) { 
@@ -30,23 +31,35 @@ void updateEtherDream()
     //clear();
   }
 
+  if (drawLaserAnimationPath) {
+    data.path.scanPath();
+  }
+
+
   scanPointOnPath();
-  //data.path.scanPath();
+  
     
   if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())
   {
-    println("current: " + currentEdgeList);
+    //println("current: " + currentEdgeList);
     EdgeList scanEdgeList = data.edgeLists.get(currentEdgeList);
     scanEdgeList(scanEdgeList);
-    
     //clear();
   }
 
   if (etherdream != null) {
     etherdream.write(commandPrepareStream());
+
+    // Write out all the upcoming point rate changes
+    for(int i=1; i<pointRateChangeCount; ++i) {
+      etherdream.write(commandQueueRateChange(pointRates[i].pointRate));
+    }
+
+    // Write all point date
     etherdream.write(commandWriteData());
+
     //etherdream.write(commandBeginPlayback(0,5000));
-    etherdream.write(commandBeginPlayback(0,2000));
+    etherdream.write(commandBeginPlayback(0,pointRates[0].pointRate));
   }
   
   visualizeLaser();
@@ -121,76 +134,10 @@ byte[] commandQueueRateChange(int pointRate)
   return byteBuffer;
 }
 
-class PointData {
-  int x,y;
-  int i;
-  int r;
-  int g;
-  int b;
-  int u1;
-  int u2;
-}
-int         pointCount=0;
-PointData[] points;
-float       _r,_g,_b;
-
-
-// For visualization
-void visualizeLaser() {
-  if(!drawLaser) return;
-  
-  strokeWeight(3);
-  for(int i=0; i<pointCount-1; ++i) {
-    stroke(points[i].r / 256, points[i].g / 256, points[i].b / 256);
-    float x0 = width  * ((points[i].x / 65535.0 + 0.5f) % 1); 
-    float y0 = height * ((points[i].y / 65535.0 + 0.5f) % 1);
-    float x1 = width  * ((points[i + 1].x / 65535.0 + 0.5f) % 1); 
-    float y1 = height * ((points[i + 1].y / 65535.0 + 0.5f) % 1);
-    line(x0,y0,x1,y1);
-    rect(x0-2,y0-2,4,4);
-  }
-}
-
-void clear()
-{
-  PointData last = points[points.length-1];
-  setColor(0,0,0);
-  for(int i=0; i<4; ++i)
-    addPoint(last.x, last.y);
-}
-
-void beginPoints() {
-  pointCount=0;
-  if (points == null) {
-    points = new PointData[10000];
-    for (int i=0; i<points.length; ++i)
-      points[i] = new PointData();
-  }
-  _r=0;_g=0;_b=0;
-}
-
-void setColor(float r, float g, float b) {
-  _r=r; _g=g; _b=b;
-}
-
-void addPoint(float x, float y) {
-  if (pointCount >= points.length)
-  	return;
-
-  PointData p = points[pointCount++];
-  
-  // 0   - 0.5 ==> 0.5 - 1
-  // 0.5 - 1   ==> 0 - 0.5
-  p.x  = (int)(((x + 0.5f) % 1.0f) * 65535);
-  p.y  = (int)(((y + 0.5f) % 1.0f) * 65535);
-  p.i  = 0;
-  p.r  = (int)(constrain(_r,0.0f,1.0f) * 65535);
-  p.g  = (int)(constrain(_g,0.0f,1.0f) * 65535);
-  p.b  = (int)(constrain(_b,0.0f,1.0f) * 65535);
-  p.u1 = 0;
-  p.u2 = 0;
-}
-
+// ------------------------------------------------------------------------------------ //
+// This provides data for the DAC to add to its buffer. The data values are full-scale 
+// (for instance, for color channels, 65535 is full output); the least-significant bits of each 
+// word will be ignored if the DAC’s resolution is less than 16 bits.
 byte[] commandWriteData() {
   //struct data_command {
   //  uint8_t command; /* ‘d’ (0x64) */
@@ -204,6 +151,10 @@ byte[] commandWriteData() {
   byteBuffer[0] = 'd';
   byteBuffer[1] = (byte)( pointCount       & 0xFF);
   byteBuffer[2] = (byte)((pointCount << 8) & 0xFF);
+
+  // The first index (index zero) always stores just the initial point rate
+  //  so we start looking for the second index
+  int nextRateChangeIndex = 1;
   
   for(int i=0; i<pointCount; ++i) {
     //struct dac_point {
@@ -219,10 +170,16 @@ byte[] commandWriteData() {
     //};
     int off = 3 + 18*i;
     PointData p = points[i];
-    
 
+    // Check if this point index is a rate change and set the flag and increment if so
+    boolean isPointRateChange = false;
+    if (nextRateChangeIndex < pointRateChangeCount &&
+        pointRates[nextRateChangeIndex].indexOfStart == i) {
+      isPointRateChange = true;
+      ++nextRateChangeIndex;
+    }
     
-    byteBuffer[off+0] = 0;
+    byteBuffer[off+0] = isPointRateChange ? (byte)(1 << 7) : 0;
     byteBuffer[off+1] = 0;
     
     byteBuffer[off+2] = (byte)( p.x       & 0xFF);
@@ -250,6 +207,113 @@ byte[] commandWriteData() {
   
   return byteBuffer;
 }
+
+
+
+
+class PointData {
+  int x,y;
+  int i;
+  int r;
+  int g;
+  int b;
+  int u1;
+  int u2;
+}
+
+class PointDataRateChange
+{
+  int indexOfStart;
+  int pointRate;
+}
+
+final int kMaxPointData           = 10000;
+final int kMaxPointRateChangeData = 100;
+final int kDefaultPointRate       = 1000;
+
+int                   pointRateChangeCount=0;
+PointDataRateChange[] pointRates;
+int                   pointCount=0;
+PointData[]           points;
+float                 _r, _g, _b;
+
+
+// For visualization
+void visualizeLaser() {
+  if(!drawLaser) return;
+  
+  strokeWeight(3);
+  for(int i=0; i<pointCount-1; ++i) {
+    stroke(points[i].r / 256, points[i].g / 256, points[i].b / 256);
+    float x0 = width  * ((points[i].x / 65535.0 + 0.5f) % 1); 
+    float y0 = height * ((points[i].y / 65535.0 + 0.5f) % 1);
+    float x1 = width  * ((points[i + 1].x / 65535.0 + 0.5f) % 1); 
+    float y1 = height * ((points[i + 1].y / 65535.0 + 0.5f) % 1);
+    line(x0,y0,x1,y1);
+    rect(x0-2,y0-2,4,4);
+  }
+}
+
+void clear()
+{
+  PointData last = points[points.length-1];
+  setColor(0,0,0);
+  for(int i=0; i<4; ++i)
+    addPoint(last.x, last.y);
+}
+
+void beginPoints() {
+  if (points == null) {
+    points = new PointData[kMaxPointData];
+    for (int i=0; i<points.length; ++i)
+      points[i] = new PointData();
+  }
+
+  if (pointRates == null) {
+    pointRates = new PointDataRateChange[200];
+    for (int i=0; i<pointRates.length; ++i)
+      pointRates[i] = new PointDataRateChange();
+  }
+
+  pointCount=0;
+  pointRateChangeCount=0;
+  pointRates[pointRateChangeCount++].pointRate = kDefaultPointRate;
+
+  setColor(0,0,0);
+}
+
+void setPointRate(int pointRate) {
+  if( pointRateChangeCount < kMaxPointRateChangeData &&
+      pointRate != pointRates[pointRateChangeCount].pointRate )
+  {
+    pointRates[pointRateChangeCount++].pointRate = pointRate;
+  }
+}
+
+void setColor(float r, float g, float b) {
+  _r=r; _g=g; _b=b;
+}
+
+void addPoint(float x, float y) {
+  if (pointCount >= points.length)
+  	return;
+
+  PointData p = points[pointCount++];
+  
+  // Wierd translation mapping
+  // 0   - 0.5 ==> 0.5 - 1
+  // 0.5 - 1   ==> 0 - 0.5
+  p.x  = (int)(((x + 0.5f) % 1.0f) * 65535);
+  p.y  = (int)(((y + 0.5f) % 1.0f) * 65535);
+  p.i  = 0;
+  p.r  = (int)(constrain(_r,0.0f,1.0f) * 65535);
+  p.g  = (int)(constrain(_g,0.0f,1.0f) * 65535);
+  p.b  = (int)(constrain(_b,0.0f,1.0f) * 65535);
+  p.u1 = 0;
+  p.u2 = 0;
+}
+
+
 
 
 

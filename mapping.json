@@ -6,99 +6,322 @@
       "type": "Vector2"
     },
     "center": {
-      "x": 0.6537500023841858,
-      "y": 0.22833333909511566,
+      "x": 0.65625,
+      "y": 0.2383333295583725,
       "type": "Vector2"
     },
     "rotation": 0.0761880949139595,
     "type": "LaserPath",
     "sourcePath": "accelerator-path.obj"
   },
-  "edgeLists": [{
-    "0": {
-      "loop": [
-        {
-          "0": {
-            "index": 1,
-            "type": "PointIndex"
-          },
-          "type": "PointIndex"
-        },
-        {
-          "1": {
-            "index": 0,
-            "type": "PointIndex"
-          },
-          "type": "PointIndex"
-        }
-      ],
-      "type": "EdgeList",
-      "tags": ""
+  "edgeLists": [
+    {
+      "0": {
+        "loop": [],
+        "type": "EdgeList",
+        "tags": ""
+      },
+      "type": "EdgeList"
     },
-    "type": "EdgeList"
-  }],
+    {
+      "1": {
+        "loop": [
+          {
+            "0": {
+              "index": 0,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "1": {
+              "index": 1,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "2": {
+              "index": 2,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "3": {
+              "index": 0,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          }
+        ],
+        "type": "EdgeList",
+        "tags": ""
+      },
+      "type": "EdgeList"
+    },
+    {
+      "2": {
+        "loop": [
+          {
+            "0": {
+              "index": 3,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "1": {
+              "index": 4,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          }
+        ],
+        "type": "EdgeList",
+        "tags": ""
+      },
+      "type": "EdgeList"
+    },
+    {
+      "3": {
+        "loop": [
+          {
+            "0": {
+              "index": 8,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "1": {
+              "index": 9,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "2": {
+              "index": 10,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          }
+        ],
+        "type": "EdgeList",
+        "tags": ""
+      },
+      "type": "EdgeList"
+    },
+    {
+      "4": {
+        "loop": [
+          {
+            "0": {
+              "index": 16,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "1": {
+              "index": 11,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "2": {
+              "index": 12,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "3": {
+              "index": 13,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "4": {
+              "index": 14,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "5": {
+              "index": 15,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          },
+          {
+            "6": {
+              "index": 16,
+              "type": "PointIndex"
+            },
+            "type": "PointIndex"
+          }
+        ],
+        "type": "EdgeList",
+        "tags": ""
+      },
+      "type": "EdgeList"
+    }
+  ],
   "type": "Mapping",
   "points": [
     {
       "0": {
-        "x": 0.3199999928474426,
-        "y": 0.19499999284744263,
+        "x": 0.4037500023841858,
+        "y": 0.28333333134651184,
         "type": "Vector2"
       },
       "type": "Vector2"
     },
     {
       "1": {
-        "x": 0.33000001311302185,
-        "y": 0.19833333790302277,
+        "x": 0.6662499904632568,
+        "y": 0.1899999976158142,
         "type": "Vector2"
       },
       "type": "Vector2"
     },
     {
       "2": {
-        "x": 0.4112499952316284,
-        "y": 0.28999999165534973,
+        "x": 0.9037500023841858,
+        "y": 0.3100000023841858,
         "type": "Vector2"
       },
       "type": "Vector2"
     },
     {
       "3": {
-        "x": 0.23125000298023224,
-        "y": 0.48500001430511475,
+        "x": 0.33375000953674316,
+        "y": 0.20999999344348907,
         "type": "Vector2"
       },
       "type": "Vector2"
     },
     {
       "4": {
-        "x": 0.4650000035762787,
-        "y": 0.5633333325386047,
+        "x": 0.46875,
+        "y": 0.15000000596046448,
         "type": "Vector2"
       },
       "type": "Vector2"
     },
     {
       "5": {
-        "x": 0.6537500023841858,
-        "y": 0.2266666740179062,
+        "x": 0.48374998569488525,
+        "y": 0.17666666209697723,
         "type": "Vector2"
       },
       "type": "Vector2"
     },
     {
       "6": {
-        "x": 0.9100000262260437,
-        "y": 0.10499999672174454,
+        "x": 0.3375000059604645,
+        "y": 0.23999999463558197,
         "type": "Vector2"
       },
       "type": "Vector2"
     },
     {
       "7": {
-        "x": 0.9049999713897705,
-        "y": 0.10833333432674408,
+        "x": 0.8337500095367432,
+        "y": 0.2083333283662796,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "8": {
+        "x": 0.8450000286102295,
+        "y": 0.19166666269302368,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "9": {
+        "x": 0.9775000214576721,
+        "y": 0.273333340883255,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "type": "Vector2",
+      "10": {
+        "x": 0.9712499976158142,
+        "y": 0.30000001192092896,
+        "type": "Vector2"
+      }
+    },
+    {
+      "11": {
+        "x": 0.5924999713897705,
+        "y": 0.2133333384990692,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "12": {
+        "x": 0.65625,
+        "y": 0.2433333396911621,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "13": {
+        "x": 0.7225000262260437,
+        "y": 0.23000000417232513,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "14": {
+        "x": 0.731249988079071,
+        "y": 0.1733333319425583,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "15": {
+        "x": 0.6612499952316284,
+        "y": 0.14666666090488434,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "16": {
+        "x": 0.5912500023841858,
+        "y": 0.15833333134651184,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "17": {
+        "x": 0.8349999785423279,
+        "y": 0.3816666603088379,
+        "type": "Vector2"
+      },
+      "type": "Vector2"
+    },
+    {
+      "18": {
+        "x": 0.16750000417232513,
+        "y": 0.6549999713897705,
         "type": "Vector2"
       },
       "type": "Vector2"

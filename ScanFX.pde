@@ -1,6 +1,13 @@
 void scanEdgeList(EdgeList edgeList) {
   
-  Vector2 first = data.points.get(edgeList.loop.get(0).index);
+  if (edgeList.loop.size() < 1)
+    return;
+  
+  int firstIndex = edgeList.loop.get(0).index;
+  if(firstIndex >= data.points.size())
+    return;
+
+  Vector2 first = data.points.get(firstIndex);
   Vector2 last = null;
   
   //setColor(0,0,0);
@@ -10,14 +17,24 @@ void scanEdgeList(EdgeList edgeList) {
   int scanType = 1;
   int count = edgeList.loop.size();
   for(int i=0; i<count; ++i) { 
-    Vector2 from = data.points.get(edgeList.loop.get(i).index);
+    int fromIndex = edgeList.loop.get(i).index;
+
+    if (fromIndex >= data.points.size())
+      continue;
+
+    Vector2 from = data.points.get(fromIndex);
+
     if(i < count-1) {
-      Vector2 to = data.points.get(edgeList.loop.get(i+1).index);
-      //
+      int toIndex = edgeList.loop.get(i+1).index;
+      if (toIndex >= data.points.size())
+        continue;
+
+      Vector2 to      = data.points.get(toIndex);
+      
       if      (scanType == 0) scanBasic(from, to);
       else if (scanType == 1) scanLightning(from, to);
-      
     }
+
     last = from;
     //addPoint(point.x, point.y);
   }  
