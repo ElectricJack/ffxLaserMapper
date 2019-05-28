@@ -88,15 +88,16 @@ class LaserPong implements Serializable
           ballPos.x = 0;
           //ballVel.x *= -1;
 
-          float   paddleCenter = paddleRight+paddleSize[0]*0.5;
-          Vector2 normal = new Vector2(1,0);//(ballPos.y - paddleCenter) * 0.01f);
+          float   paddleCenter = paddleLeft+paddleSize[0]*0.5;
+          Vector2 normal = new Vector2(-(ballPos.y - paddleCenter) * 0.03f,1);
           normal.nrmeq();
-          ballVel = ballVel.ref(normal);
+          ballVel.refeq(normal);
+          ballPos.inc(ballVel);
 
           //float paddleCenter = paddleLeft+paddleSize[0]*0.5;
           //ballVel.y += (ballPos.y - paddleCenter) * 0.1f;
 
-          ballVel.muleq(1.01);
+          ballVel.muleq(1.05);
         } else {
           respawn();
         }
@@ -107,14 +108,14 @@ class LaserPong implements Serializable
         //println("paddleRight + paddleSize[1]: " + (paddleRight + paddleSize[1]));
         if (ballPos.y >= paddleRight-padding && ballPos.y <= paddleRight + paddleSize[1]+padding) {
           ballPos.x = size.x;
-          //ballVel.x *= -1;
 
           float   paddleCenter = paddleRight+paddleSize[1]*0.5;
-          Vector2 normal = new Vector2(-1,0);//(ballPos.y - paddleCenter) * 0.01f);
+          Vector2 normal = new Vector2((ballPos.y - paddleCenter) * 0.03f,1);
           normal.nrmeq();
-          ballVel = ballVel.ref(normal);
+          ballVel.refeq(normal);
+          ballPos.inc(ballVel);
 
-          ballVel.muleq(1.01);
+          ballVel.muleq(1.05);
         } else {
           respawn();
         }
