@@ -15,9 +15,10 @@ class LaserPong implements Serializable
 
 
   Vector2 ballPos    = new Vector2();
-  Vector2 ballVel     = new Vector2();
+  Vector2 ballVel    = new Vector2();
   float[] paddlePos  = new float[2];
   float[] paddleSize = new float[2];
+  float   delayTimer = 0;
 
   public void serialize(Serializer s)
   {
@@ -70,13 +71,55 @@ class LaserPong implements Serializable
     strokeWeight(1);
     noFill();
 
+    delayTimer -= 1.0/60.0f;
+
     pushMatrix();
       applyTransform();
       rect(0,0,size.x,size.y);
 
-      ballPos.inc(ballVel);
-      if (ballPos.x < 0)      { ballPos.x = 0;      ballVel.x *= -1; }
-      if (ballPos.x > size.x) { ballPos.x = size.x; ballVel.x *= -1; }
+      if (delayTimer < 0)
+          ballPos.inc(ballVel);
+
+      float padding = 5;
+      float paddleLeft  = (size.y-paddleSize[0]) * paddlePos[0];
+      float paddleRight = (size.y-paddleSize[1]) * paddlePos[1];
+      if (ballPos.x < 0) { 
+        if(ballPos.y >= paddleLeft-padding && ballPos.y <= paddleLeft + paddleSize[0]+padding) {
+          ballPos.x = 0;
+          //ballVel.x *= -1;
+
+          float   paddleCenter = paddleRight+paddleSize[0]*0.5;
+          Vector2 normal = new Vector2(1,0);//(ballPos.y - paddleCenter) * 0.01f);
+          normal.nrmeq();
+          ballVel = ballVel.ref(normal);
+
+          //float paddleCenter = paddleLeft+paddleSize[0]*0.5;
+          //ballVel.y += (ballPos.y - paddleCenter) * 0.1f;
+
+          ballVel.muleq(1.01);
+        } else {
+          respawn();
+        }
+      }
+      if (ballPos.x > size.x) { 
+        //println("ballPos.y: " + ballPos.y);
+        //println("paddleRight: " + paddleRight);
+        //println("paddleRight + paddleSize[1]: " + (paddleRight + paddleSize[1]));
+        if (ballPos.y >= paddleRight-padding && ballPos.y <= paddleRight + paddleSize[1]+padding) {
+          ballPos.x = size.x;
+          //ballVel.x *= -1;
+
+          float   paddleCenter = paddleRight+paddleSize[1]*0.5;
+          Vector2 normal = new Vector2(-1,0);//(ballPos.y - paddleCenter) * 0.01f);
+          normal.nrmeq();
+          ballVel = ballVel.ref(normal);
+
+          ballVel.muleq(1.01);
+        } else {
+          respawn();
+        }
+      }
+
       if (ballPos.y < 0)      { ballPos.y = 0;      ballVel.y *= -1; }
       if (ballPos.y > size.y) { ballPos.y = size.y; ballVel.y *= -1; }
 
@@ -97,6 +140,7 @@ class LaserPong implements Serializable
       drawLineSegment(tl,tr);
       drawLineSegment(br,bl);
 
+
       Vector2 paddleLeft  = new Vector2(0,     (size.y-paddleSize[0]) * paddlePos[0]);
       Vector2 paddleRight = new Vector2(size.x,(size.y-paddleSize[1]) * paddlePos[1]);
       drawLineSegment(paddleLeft,paddleLeft.add(0,paddleSize[0]));
@@ -108,10 +152,14 @@ class LaserPong implements Serializable
       Vector2 laserAt = laserCoordPoint(ballPos);
       addPoint(laserAt.x, laserAt.y);
 
-      setColor(1);
-      setPointRate(2500);
-      addPoint(laserAt.x, laserAt.y);
-      addPoint(laserAt.x, laserAt.y);
+      if(delayTimer < 0.0 || (delayTimer % 0.2) < 0.1)
+      {
+        setColor(1);
+        setPointRate(2500);
+        addPoint(laserAt.x, laserAt.y);
+        addPoint(laserAt.x, laserAt.y);
+      }
+
 
     popMatrix();
   }
@@ -133,8 +181,16 @@ class LaserPong implements Serializable
 
   void respawn()
   {
+    delayTimer = 1.5;
+    randomSeed(millis());
 		ballPos.set(size).muleq(0.5);
-		ballVel.set(random(-5,5), random(-5,5));
+    ballVel.set(random(-5,5), random(-2,2));
+    while(abs(ballVel.x) < 1.5)
+		    ballVel.set(random(-5,5), random(-2,2));
+
+    ballVel.nrmeq();
+    ballVel.mul(2);
+
   }
   private Vector2 laserCoordPoint(Vector2 pongCoord)
   {

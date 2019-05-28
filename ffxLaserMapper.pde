@@ -124,6 +124,7 @@ void setup()
 	frameRate(60);
 
 	nextUpdateTime = millis();
+
 }
 
 //int updateSampler=0;
@@ -137,8 +138,6 @@ void draw()
 	colorMode(HSB,255);
 	background(color(editMode*40,100,100));
 
-	//updateSampler++;
-	//if((updateSampler % 4) == 0)
 	updateEtherDream();
 
   // Control logic
@@ -368,7 +367,17 @@ void animateLaserPower(float resClipTime, float startTime, float endTime, int in
 }
 
 void oscEvent(OscMessage theOscMessage) {
-  
+  //println(theOscMessage.addrPattern());
+
+	if(theOscMessage.checkAddrPattern("/1/fader1"))
+	{
+			data.pong.paddlePos[0] = 1.0-theOscMessage.get(0).floatValue();
+	}
+	else if(theOscMessage.checkAddrPattern("/1/fader4"))
+	{
+			data.pong.paddlePos[1] = 1.0-theOscMessage.get(0).floatValue();
+	}
+
   if (theOscMessage.checkAddrPattern("/composition/layers/2/clips/1/transport/position")) {
   	float resolumeClipTime = theOscMessage.get(0).floatValue();
 
