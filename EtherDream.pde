@@ -41,6 +41,10 @@ void updateEtherDream()
 
 
   scanPointOnPath();
+
+  scanChargeLaser(0);
+  scanChargeLaser(1);
+  scanChargeLaser(2);
   
     
   if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())

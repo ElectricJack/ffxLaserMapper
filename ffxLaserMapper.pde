@@ -72,23 +72,27 @@ boolean         laserEnabled = false; // Used by animation
   // - Need to change point speed for blanking at start/end
 	// - Scan effects need to go all the way to the last point in the list
 
+	// - Blank the laser before moving to the animated track location
+
 
 //------------------------------------------------
 // Todo:
 
-
-	// - Blank the laser before moving to the animated track location
-	// - Make it so that you can't edit the laser path alignment points unless you are in the laser path mode
-
-
 	// - Implement charging animation
-	// Write some different laser animations
+	// - Write some different laser animations
 
-	// Need to be able to trigger different edges with effects from different OSC triggers   enable/disable for each edge/effect
+
+	// Edit Mode improvements:
+	// - Make it so that you can't edit the laser path alignment points unless you are in the laser path mode
+	// - Deleting a point needs to update any later vertex indices (decrement them) in the edge lists
+
+
+	// Need to be able to trigger different edges with effects from different OSC triggers enable/disable for each edge/effect
 
 	// Stretch:
+	//  - LASER PONG?!!!
+	//  - Asteroids??
 	//  - Need the ability to trigger more than one laser loop path animation at a time
-
 
 
 
@@ -142,7 +146,6 @@ void draw()
 	else if (editMode == 1) updateEditEdges();
 	else if (editMode == 2) updatePlaceLaserPath();
 
-
 	keyWasPressed = keyPressed;
 }
 
@@ -160,7 +163,7 @@ void keyPressed()
 
 	if(key == 'a') { drawLaserAnimationPath = !drawLaserAnimationPath; println("drawLaserAnimationPath: " + drawLaserAnimationPath); }
 	if(key == 's') { laserMouse = !laserMouse; println("laserMouse: " + laserMouse); }
-	if(key == 'd') { drawLaser = !drawLaser; println("drawLaser: " + drawLaser); } 
+	if(key == 'd') { drawLaser  = !drawLaser;  println("drawLaser: " + drawLaser); } 
 
 	if (keyCode == LEFT) ++currentEdgeList;
 	if (keyCode == RIGHT) --currentEdgeList;
@@ -192,23 +195,6 @@ void updatePlaceLaserPath()
 
 
 
-
-
-void scanPointOnPath()
-{
-  if (!laserEnabled)
-    return;
-    
-  Vector2 at = data.path.getPositionAtTime(time);
-  if (at != null) {
-    fill(255,0,0);
-    ellipse(at.x, at.y, 10,10);
-    setColor(1,1,1);
-    addPoint(at.x/width, at.y/height);
-    addPoint(at.x/width, at.y/height);
-    addPoint(at.x/width, at.y/height);
-  }
-}
 
 void updateEditPoints()
 {
@@ -349,15 +335,40 @@ void drawPoint(Vector2 point, float s)
 }
 
 
-int laserEffectMode = 0;
+int     laserEffectMode = 0;
+float[] laserPowerLevel = new float[4];
+float[] laserTime       = new float[4];
+
+
+
+void animateLaserPower(float resClipTime, float startTime, float endTime, int index)
+{
+	laserPowerLevel[index] = 0;
+	if (resClipTime > startTime && resClipTime < endTime) {
+  	float t = map(resClipTime, startTime, endTime, 0, 1);
+  	laserTime[index] = t;
+  	if      (t <= 0.25) laserPowerLevel[index] = map2(t, 0,   0.25, 0,1, SINUSOIDAL, EASE_IN_OUT);
+  	else if (t >= 0.75) laserPowerLevel[index] = map2(t, 0.75,   1, 1,0, SINUSOIDAL, EASE_IN_OUT);
+  	else                laserPowerLevel[index] = 1;
+  }
+}
+
 void oscEvent(OscMessage theOscMessage) {
   
   if (theOscMessage.checkAddrPattern("/composition/layers/2/clips/1/transport/position")) {
   	float resolumeClipTime = theOscMessage.get(0).floatValue();
+
 		//0.325 to 1.273
 		time = map(resolumeClipTime, 0, 0.484, 0.325, 1.273);
     laserEnabled = resolumeClipTime < 0.484;
-    //println(""+ time + " " + resolumeClipTime);
+    println(resolumeClipTime);
+
+    int laserFirePointsEdgelist = 1;
+
+    animateLaserPower(resolumeClipTime, 0.590, 0.655, 0);//1
+    animateLaserPower(resolumeClipTime, 0.623, 0.683, 2);//0
+    animateLaserPower(resolumeClipTime, 0.753, 0.908, 1);//2
+
   }
   else if (theOscMessage.checkAddrPattern("/composition/layers/3/clips/1/transport/position"))
   {

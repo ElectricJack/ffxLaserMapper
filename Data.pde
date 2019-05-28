@@ -14,13 +14,13 @@ class PointIndex implements Serializable
 class EdgeList implements Serializable
 {
 	public List<PointIndex> loop = new ArrayList<PointIndex>();
-  public String           tags;
+  	public String           tags;
 
 	public EdgeList clone()   { return new EdgeList(); }
 	public String   getType() { return "EdgeList"; }
 	public void serialize(Serializer s)
 	{
-    tags = s.serialize("tags", tags);
+    	tags = s.serialize("tags", tags);
 		s.serialize("loop", loop);
 	}
 }
@@ -34,7 +34,7 @@ class Mapping implements Serializable
 
 	public Mapping clone()   { return new Mapping(); }
 	public String  getType() { return "Mapping"; }
-	
+
 	public void serialize(Serializer s)
 	{
 		s.serialize("points",    points);

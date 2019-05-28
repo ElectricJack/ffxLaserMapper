@@ -1,3 +1,47 @@
+void scanPointOnPath()
+{
+  if (!laserEnabled)
+    return;
+    
+  Vector2 at = data.path.getPositionAtTime(time);
+  if (at != null) {
+    fill(255,0,0);
+    ellipse(at.x, at.y, 10,10);
+    
+    at.diveq(width, height);
+
+    setPointRate(1000);
+    setColor(0,0,0);
+    addPoint(at.x, at.y);
+    setColor(1,1,1);
+    addPoint(at.x, at.y);
+    addPoint(at.x, at.y);
+  }
+}
+
+void scanChargeLaser(int index)
+{
+  float power = laserPowerLevel[index];
+  if(power > 0) {
+    println("POWER ON " + index + " " + power);
+    EdgeList edgeList  = data.edgeLists.get(1);
+    int      vertIndex = edgeList.loop.get(index).index;
+    Vector2  at        = data.points.get(vertIndex).get();
+    float s = 0.01;
+    at.x += random(-s,s);
+    at.y += random(-s,s);
+    setPointRate(blankingPointRate);
+    setColor(0,0,0);
+    addPoint(at.x, at.y);
+    setColor(power);
+    addPoint(at.x, at.y);
+    setColor(power);
+    addPoint(at.x, at.y);
+    setColor(power);
+    addPoint(at.x, at.y);
+  }
+}
+
 void scanEdgeList(EdgeList edgeList) {
   
   if (edgeList.loop.size() < 1)
@@ -83,7 +127,6 @@ void scanLightning(Vector2 from, Vector2 to)
     
     float env = sin(t*PI);
     float offsetScalar = (noise(i*0.4 + animTime) - 0.5) * 0.1 + (random(1) - 0.5) * 0.02;
-    //float offsetScalar = ;
     Vector2 at = from.add(diff.mul(t)).add(normal.mul(offsetScalar * env));
     addPoint(at.x, at.y);
   }
