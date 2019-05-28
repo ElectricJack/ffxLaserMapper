@@ -41,11 +41,19 @@ class LaserPong implements Serializable
   	top        = new Vector2();
   	right      = new Vector2();
 
+
 		// Init handles
 		center.x = 0.5;
 		center.y = 0.5;
 		top.set(   center.sub(0.0f, 0.5*size.y / height));
 		right.set( center.add(0.5*size.x / width, 0.0f));
+
+
+    paddlePos[0] = 0.5;
+    paddlePos[1] = 0.5;
+    paddleSize[0] = size.y / 4;
+    paddleSize[1] = size.y / 4;
+
 
 		addPoint(center, false);
 		addPoint(top,    false);
@@ -78,58 +86,49 @@ class LaserPong implements Serializable
   }
   void scan()
   {
-    
     pushMatrix();
       applyTransform();
-
-
-
-
 
       Vector2 tl = new Vector2(0,0);
       Vector2 tr = new Vector2(size.x,0);
       Vector2 bl = new Vector2(0,size.y);
       Vector2 br = new Vector2(size.x,size.y);
 
-      // Draw line from top left to top right
-      Vector2 laserAt = laserCoordPoint(tl);
-      setColor(0,0,0);
-      setPointRate(blankingPointRate);
-      addPoint(laserAt.x, laserAt.y);
-      setColor(1);
-      setPointRate(2500);
-      addPoint(laserAt.x, laserAt.y);
+      drawLineSegment(tl,tr);
+      drawLineSegment(br,bl);
 
-      laserAt = laserCoordPoint(tr);
-      addPoint(laserAt.x, laserAt.y);
-
-
-      // Draw line from bottom right to bottom left
-      laserAt = laserCoordPoint(br);
-      setColor(0,0,0); setPointRate(blankingPointRate);
-      addPoint(laserAt.x, laserAt.y);
-      setColor(1);
-      setPointRate(2500);
-      addPoint(laserAt.x, laserAt.y);
-
-      laserAt = laserCoordPoint(bl);
-      addPoint(laserAt.x, laserAt.y);
-
-
+      Vector2 paddleLeft  = new Vector2(0,     (size.y-paddleSize[0]) * paddlePos[0]);
+      Vector2 paddleRight = new Vector2(size.x,(size.y-paddleSize[1]) * paddlePos[1]);
+      drawLineSegment(paddleLeft,paddleLeft.add(0,paddleSize[0]));
+      drawLineSegment(paddleRight,paddleRight.add(0,paddleSize[1]));
 
       setColor(0,0,0);
       setPointRate(blankingPointRate);
 
-      laserAt = laserCoordPoint(ballPos);
+      Vector2 laserAt = laserCoordPoint(ballPos);
       addPoint(laserAt.x, laserAt.y);
 
       setColor(1);
       setPointRate(2500);
-
       addPoint(laserAt.x, laserAt.y);
       addPoint(laserAt.x, laserAt.y);
 
     popMatrix();
+  }
+
+  void drawLineSegment(Vector2 from, Vector2 to)
+  {
+      Vector2 laserAt = laserCoordPoint(from);
+      setColor(0); setPointRate(blankingPointRate);
+      addPoint(laserAt.x, laserAt.y);
+
+      setColor(1); setPointRate(2500);
+      addPoint(laserAt.x, laserAt.y);
+      addPoint(laserAt.x, laserAt.y);
+
+      laserAt = laserCoordPoint(to);
+      addPoint(laserAt.x, laserAt.y);
+      addPoint(laserAt.x, laserAt.y);
   }
 
   void respawn()
