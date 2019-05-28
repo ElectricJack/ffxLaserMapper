@@ -4,12 +4,12 @@
 
 void updateEtherDream()
 {
-  if (etherdream != null && etherdream.available() > 0) { 
-    byte[] byteBuffer = new byte[32];
-    int byteCount = etherdream.readBytes(byteBuffer);
-    //println("byte count: " + byteCount);
-    parseDacStatus(byteBuffer, 0);
-  } 
+  // if (etherdream != null && etherdream.available() > 0) { 
+  //   byte[] byteBuffer = new byte[32];
+  //   int byteCount = etherdream.readBytes(byteBuffer);
+  //   //println("byte count: " + byteCount);
+  //   parseDacStatus(byteBuffer, 0);
+  // } 
 
   beginPoints();
 
@@ -72,19 +72,6 @@ public static int unsignedByte(byte b) {
   return b & 0xFF;
 }
   
-void receive( byte[] data, String ip, int port )
-{
-  if(etherdream == null) {
-    println("Connecting to " + ip + " on port 7765");
-    etherdream = new Client(this, ip, 7765);
-  }
-  
-  println("Recieved UDP data from: "+ip+" on port: "+port);
-  parseBroadcast(data, 0);
-  
-  //String message = new String( data );
-  //println( "receive: \""+data+"\" from "+ip+" on port "+port );
-}
 
 
 
@@ -152,6 +139,9 @@ byte[] commandWriteData() {
   byteBuffer[1] = (byte)( pointCount       & 0xFF);
   byteBuffer[2] = (byte)((pointCount << 8) & 0xFF);
 
+
+  println("sending " + byteBuffer.length + " bytes.");
+ 
   // The first index (index zero) always stores just the initial point rate
   //  so we start looking for the second index
   int nextRateChangeIndex = 1;
@@ -179,23 +169,23 @@ byte[] commandWriteData() {
       ++nextRateChangeIndex;
     }
     
-    byteBuffer[off+0] = isPointRateChange ? (byte)(1 << 7) : 0;
-    byteBuffer[off+1] = 0;
+    byteBuffer[off+0] = 0;
+    byteBuffer[off+1] = isPointRateChange ? (byte)(1 << 7) : 0; // 15th bit to enable rate change
     
-    byteBuffer[off+2] = (byte)( p.x       & 0xFF);
-    byteBuffer[off+3] = (byte)((p.x >> 8) & 0xFF);
+    byteBuffer[off+2] = (byte)( p.x       & 0xFF); // Low
+    byteBuffer[off+3] = (byte)((p.x >> 8) & 0xFF); // High
     
     byteBuffer[off+4] = (byte)( p.y       & 0xFF);
     byteBuffer[off+5] = (byte)((p.y >> 8) & 0xFF);
     
     
-    byteBuffer[off+6] = (byte)(p.r & 0xFF);
+    byteBuffer[off+6] = (byte)(p.r        & 0xFF);
     byteBuffer[off+7] = (byte)((p.r >> 8) & 0xFF);
     
-    byteBuffer[off+8] = (byte)(p.g & 0xFF);
+    byteBuffer[off+8] = (byte)(p.g        & 0xFF);
     byteBuffer[off+9] = (byte)((p.g >> 8) & 0xFF);
 
-    byteBuffer[off+10] = (byte)(p.b & 0xFF);
+    byteBuffer[off+10] = (byte)(p.b        & 0xFF);
     byteBuffer[off+11] = (byte)((p.b >> 8) & 0xFF);
 
     byteBuffer[off+14] = 0;
@@ -276,18 +266,15 @@ void beginPoints() {
   }
 
   pointCount=0;
+  activePointRate = kDefaultPointRate;
   pointRateChangeCount=0;
   pointRates[pointRateChangeCount++].pointRate = kDefaultPointRate;
 
   setColor(0,0,0);
 }
-
+int activePointRate = 1000;
 void setPointRate(int pointRate) {
-  if( pointRateChangeCount < kMaxPointRateChangeData &&
-      pointRate != pointRates[pointRateChangeCount].pointRate )
-  {
-    pointRates[pointRateChangeCount++].pointRate = pointRate;
-  }
+  activePointRate = pointRate;
 }
 
 void setColor(float r, float g, float b) {
@@ -297,6 +284,15 @@ void setColor(float r, float g, float b) {
 void addPoint(float x, float y) {
   if (pointCount >= points.length)
   	return;
+
+  if( pointRateChangeCount < kMaxPointRateChangeData &&
+      activePointRate != pointRates[pointRateChangeCount-1].pointRate )
+  {
+    println("changing point rate ("+pointRateChangeCount+"): " + activePointRate);
+    pointRates[pointRateChangeCount].pointRate    = activePointRate;
+    pointRates[pointRateChangeCount].indexOfStart = pointCount;
+    ++pointRateChangeCount;
+  }
 
   PointData p = points[pointCount++];
   
@@ -316,12 +312,41 @@ void addPoint(float x, float y) {
 
 
 
+void receive( byte[] data, String ip, int port )
+{
+  if (etherdream == null) {
+    println("Connecting to " + ip + " on port 7765");
+    etherdream = new Client(this, ip, 7765);
+  }
+  
+  //println("Recieved UDP data from: "+ip+" on port: "+port);
+  println("Recieved " + data.length + " bytes");
+  if (data.length == 22)
+    parseResponse(data, 0);
+  else if(data.length == 36)
+    parseBroadcast(data, 0);
+  
+  //String message = new String( data );
+  //println( "receive: \""+data+"\" from "+ip+" on port "+port );
+}
 
+void parseResponse(byte[] byteBuffer, int i) // 2 bytes + 20 byte status
+{
+  int response = unsignedByte(byteBuffer[i+0]);
+  int command  = unsignedByte(byteBuffer[i+1]);
+
+  if      (response == 0x61) println("Response ("+command+"): ACK");
+  else if (response == 0x46) println("Response ("+command+"): Error - Buffer full!");
+  else if (response == 0x49) println("Response ("+command+"): Error - Invalid!");
+  else if (response == 0x21) println("Response ("+command+"): EStop condition!!");
+  
+  parseDacStatus(byteBuffer, i+2);
+}
 // ------------------------------------------------------------------------------------ //
-void parseBroadcast(byte[] byteBuffer, int i)
+void parseBroadcast(byte[] byteBuffer, int i) // 16 bytes + 20 byte status
 {
   //struct j4cDAC_broadcast {
-  //  uint8_t mac_address[6];
+  //  uint8_t mac_address[6];s
   //  uint16_t hw_revision;
   //  uint16_t sw_revision;
   //  uint16_t buffer_capacity;
@@ -341,7 +366,7 @@ void parseBroadcast(byte[] byteBuffer, int i)
   int bufferCapacity = (byteBuffer[i+10] & 0xFF) | (byteBuffer[i+11] & 0xFF) <<  8;
   int maxPointRate   = (byteBuffer[i+12] & 0xFF) | (byteBuffer[i+13] & 0xFF) <<  8 | (byteBuffer[i+14] & 0xFF) << 16 | (byteBuffer[i+15] & 0xFF) << 24;
   
-  if(log) {
+  if (log) {
     println("macAddress:     "+macAddress);
     println("hwRevision:     "+hwRevision);
     println("swRevision:     "+swRevision);
@@ -349,11 +374,11 @@ void parseBroadcast(byte[] byteBuffer, int i)
     println("maxPointRate:   "+maxPointRate);
   }
   
-  parseDacStatus(byteBuffer, i+14);
+  parseDacStatus(byteBuffer, i+16);
 }
 
 // ------------------------------------------------------------------------------------ //
-void parseDacStatus(byte[] byteBuffer, int i)
+void parseDacStatus(byte[] byteBuffer, int i) // 20 bytes
 {
   //struct dac_status {
   //        uint8_t protocol;
@@ -387,11 +412,11 @@ void parseDacStatus(byte[] byteBuffer, int i)
     println("source:           " + (int)source);
     
     println("lightEngineFlags: " + lightEngineFlags);
-    println("playbackFlags: "    + playbackFlags);
-    println("sourceFlags: "      + sourceFlags);
+    println("playbackFlags:    " + playbackFlags);
+    println("sourceFlags:      " + sourceFlags);
     
     println("bufferFullness: " + bufferFullness);
-    println("pointRate: "      + pointRate);
-    println("pointCount: "     + pointCount);
+    println("pointRate:      " + pointRate);
+    println("pointCount:     " + pointCount);
   }
 }

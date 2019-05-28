@@ -15,7 +15,7 @@ Client   etherdream;
 //PeasyCam cam;
 
 final String  fileName = "mapping.json";
-final boolean log      = false;
+final boolean log      = true;
 
 Mapping         data      = new Mapping();
 JSONSerializer  store     = null;
@@ -35,6 +35,13 @@ boolean         laserMouse = false;
 boolean         drawLaser = true;
 int             currentEdgeList = 0; 
 boolean         drawLaserAnimationPath = false;
+
+final int       blankingPointRate = 2000;
+
+
+float           time; // Used by animation
+boolean         laserEnabled = false; // Used by animation
+
 
 // tag edges
 // select [tags]
@@ -59,11 +66,12 @@ boolean         drawLaserAnimationPath = false;
 
 	// - Separate edit mode for alignment (this way it doesn't get screwed up)
 
+	// - Need to be able to set different point rendering speeds between paths
 
 //------------------------------------------------
 // Todo:
 
-	// - Need to be able to set different point rendering speeds between paths
+	// - Calculate next time to send data and wait.
 
   // - Need to change point speed for blanking at start/end
 	// - Scan effects need to go all the way to the last point in the list
@@ -101,7 +109,7 @@ void setup()
 	if (!data.path.isLoaded())
 		data.path.load(data.path.sourcePath);
 
-	frameRate(60);
+	frameRate(30);
 }
 
 //int updateSampler=0;
@@ -179,8 +187,7 @@ void updatePlaceLaserPath()
 }
 
 
-float   time;
-boolean laserEnabled = false;
+
 
 
 void scanPointOnPath()

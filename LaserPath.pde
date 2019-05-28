@@ -120,21 +120,40 @@ class LaserPath implements Serializable
 
   void scanPath()
   {
-    setColor(1,1,1);
-
+    
     pushMatrix();
       applyTransform();
 
+      setColor(0,0,0);
+      setPointRate(blankingPointRate);
+
+      Vector2 first = laserCoordPoint(0);
+      addPoint(first.x, first.y);
+
+      setColor(1,1,1);
+      setPointRate(5000);
+
       int totalVerts = verts.size();
-      for (int i=0; i<=totalVerts; ++i) {
-        LaserVert cur = verts.get(i%totalVerts);
-        Vector2 at = new Vector2(
-          screenX(cur.uv.x*size.x, cur.uv.y*size.y, 0),
-          screenY(cur.uv.x*size.x, cur.uv.y*size.y, 0)
-        );
-        addPoint(at.x/width, at.y/height);
+      for (int i=1; i<totalVerts; ++i) {
+        Vector2 at = laserCoordPoint(i%totalVerts);
+        addPoint(at.x, at.y);
       }
+
+      setPointRate(blankingPointRate);
+      addPoint(first.x, first.y);
+      setColor(0,0,0);
+      addPoint(first.x, first.y);
+
     popMatrix();
+  }
+
+  private Vector2 laserCoordPoint(int index)
+  {
+    LaserVert cur = verts.get(index);
+    return new Vector2(
+      screenX(cur.uv.x*size.x, cur.uv.y*size.y, 0) / width,
+      screenY(cur.uv.x*size.x, cur.uv.y*size.y, 0) / height
+    );
   }
   
   Vector2 getPositionAtTime(float t)
