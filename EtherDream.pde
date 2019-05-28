@@ -17,7 +17,7 @@ void updateEtherDream()
 
   beginPoints(blankingPointRate);
 
-  setColor(0,0,0);
+  setColor(0);
   addPoint(-0.5,-0.5);
   //for(int i=0; i<10; ++i){
   //  addPoint(-0.5,-0.5);
@@ -28,9 +28,9 @@ void updateEtherDream()
     float my = (float)mouseY/height;
 
     addPoint(mx,my);
-    setColor(1,1,1);
+    setColor(1);
     addPoint(mx,my);
-    setColor(0,0,0);
+    setColor(0);
     addPoint(mx,my);
 
   }
@@ -39,20 +39,20 @@ void updateEtherDream()
     data.path.scanPath();
   }
 
+  data.pong.scan();
 
   scanPointOnPath();
-
   scanChargeLaser(0);
   scanChargeLaser(1);
   scanChargeLaser(2);
   
-    
+  scanLaserEffects();
+  
+  // Debug Rendering:
   if(currentEdgeList >= 0 && currentEdgeList < data.edgeLists.size())
   {
-    //println("current: " + currentEdgeList);
     EdgeList scanEdgeList = data.edgeLists.get(currentEdgeList);
     scanEdgeList(scanEdgeList);
-    //clear();
   }
 
 
@@ -272,7 +272,7 @@ void visualizeLaser() {
 void clear()
 {
   PointData last = points[points.length-1];
-  setColor(0,0,0);
+  setColor(0);
   for(int i=0; i<4; ++i)
     addPoint(last.x, last.y);
 }
@@ -298,13 +298,14 @@ void beginPoints(int pointRate) {
   pointRateChangeCount=0;
   pointRates[pointRateChangeCount++].pointRate = pointRate;
 
-  setColor(0,0,0);
+  setColor(0);
 }
 int activePointRate = 1000;
 void setPointRate(int pointRate) {
   activePointRate = pointRate;
 }
 
+void setColor(float x) { setColor(x,x,x); }
 void setColor(float r, float g, float b) {
   _r=r; _g=g; _b=b;
 }

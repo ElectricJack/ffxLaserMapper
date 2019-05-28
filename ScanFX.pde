@@ -1,4 +1,68 @@
+
 float animTime = 0;
+
+void scanPointOnPath()
+{
+  if (!laserEnabled)
+    return;
+    
+  Vector2 at = data.path.getPositionAtTime(time);
+  if (at != null) {
+    fill(255,0,0);
+    ellipse(at.x, at.y, 10,10);
+    
+    at.diveq(width, height);
+
+    setPointRate(1000);
+    setColor(0);
+    addPoint(at.x, at.y);
+    setColor(1);
+    addPoint(at.x, at.y);
+    addPoint(at.x, at.y);
+  }
+}
+
+void scanChargeLaser(int index)
+{
+  float power = laserPowerLevel[index];
+  if(power > 0) {
+    //println("POWER ON " + index + " " + power);
+    EdgeList edgeList  = data.edgeLists.get(1);
+    int      vertIndex = edgeList.loop.get(index).index;
+    Vector2  at        = data.points.get(vertIndex).get();
+    float s = 0.01;
+    at.x += random(-s,s);
+    at.y += random(-s,s);
+    setPointRate(blankingPointRate);
+    setColor(0);
+    addPoint(at.x, at.y);
+
+    setColor(power);
+    for(int i=0; i<4; ++i)
+        addPoint(at.x, at.y);
+  }
+}
+
+void scanLaserEffects()
+{
+  if(laserEffectMode == 0)
+  {
+    scanEdgeList(data.edgeLists.get(currentEdgeList));
+  }
+  else if(laserEffectMode == 0)
+  {
+    
+  }
+  else if(laserEffectMode == 0)
+  {
+    
+  }
+  else if(laserEffectMode == 0)
+  {
+    
+  }
+}
+
 
 void scanEdgeList(EdgeList edgeList) {
 
@@ -15,11 +79,13 @@ void scanEdgeList(EdgeList edgeList) {
   Vector2 last = null;
 
   setPointRate(blankingPointRate);
-  setColor(0,0,0);
+  setColor(0);
   addPoint(first.x,first.y);
-  setColor(1,1,1);
 
+  setColor(1);
+  
   int scanType = 2;
+
   int count = edgeList.loop.size();
   for(int i=0; i<count; ++i) {
     int fromIndex = edgeList.loop.get(i).index;
@@ -45,14 +111,7 @@ void scanEdgeList(EdgeList edgeList) {
       addPoint(last.x, last.y);
     }
 
-
-  }
-
-  // if(last != null)
-  // {
-  //  setColor(0,0,0);
-  //  addPoint(last.x, last.y);
-  // }
+  }  
 }
 
 void scanBasic(Vector2 from, Vector2 to)

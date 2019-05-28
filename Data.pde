@@ -30,6 +30,7 @@ class Mapping implements Serializable
 	public List<Vector2>  points    = new ArrayList<Vector2>();
 	public List<EdgeList> edgeLists = new ArrayList<EdgeList>();
 	public LaserPath      path      = new LaserPath();
+	public LaserPong      pong      = new LaserPong();
 
 
 	public Mapping clone()   { return new Mapping(); }
@@ -40,6 +41,7 @@ class Mapping implements Serializable
 		s.serialize("points",    points);
 		s.serialize("edgeLists", edgeLists);
 		s.serialize("path",      path);
+		s.serialize("pong",      pong);
 
 		if(s.isLoading())
 		{

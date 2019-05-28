@@ -42,6 +42,7 @@ final int       blankingPointRate = 1000;
 float           time; // Used by animation
 boolean         laserEnabled = false; // Used by animation
 
+boolean         recenteredWindow = false;
 
 // tag edges
 // select [tags]
@@ -99,14 +100,17 @@ boolean         laserEnabled = false; // Used by animation
 void setup()
 {
 	size(800,600,P3D);
+
   oscP5 = new OscP5(this,12000);
 	udp   = new UDP( this, 7654 );
 	store = new JSONSerializer(this);
+
 	store.registerType(new Mapping());
 	store.registerType(new EdgeList());
 	store.registerType(new PointIndex());
 	store.registerType(new Vector2());
 	store.registerType(new LaserPath());
+	store.registerType(new LaserPong());
 
 	//udp.log( true ); 		// <-- printout the connection activity
 	udp.listen( true );
@@ -114,6 +118,8 @@ void setup()
 	loadData();
 	if (!data.path.isLoaded())
 		data.path.load(data.path.sourcePath);
+	if (!data.pong.isInitialized())
+		data.pong.init();
 
 	frameRate(60);
 
@@ -123,6 +129,11 @@ void setup()
 //int updateSampler=0;
 void draw()
 {
+	if (!recenteredWindow) {
+    frame.setLocation(200, 200);
+    recenteredWindow = true;
+  }
+
 	colorMode(HSB,255);
 	background(color(editMode*40,100,100));
 
@@ -141,6 +152,7 @@ void draw()
 	wasMousePressed = mousePressed;
 
   data.path.draw();
+	data.pong.draw();
 
 	if      (editMode == 0) updateEditPoints();
 	else if (editMode == 1) updateEditEdges();
@@ -160,6 +172,8 @@ void keyPressed()
 	else if (key == '4') editMode = 3;
 	else if (key == '5') editMode = 4;
 	else if (key == '6') editMode = 5;
+
+	if(key == 'r') data.pong.respawn();
 
 	if(key == 'a') { drawLaserAnimationPath = !drawLaserAnimationPath; println("drawLaserAnimationPath: " + drawLaserAnimationPath); }
 	if(key == 's') { laserMouse = !laserMouse; println("laserMouse: " + laserMouse); }
