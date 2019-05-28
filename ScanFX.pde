@@ -5,12 +5,12 @@ void scanPointOnPath()
 {
   if (!laserEnabled)
     return;
-    
+
   Vector2 at = data.path.getPositionAtTime(time);
   if (at != null) {
     fill(255,0,0);
     ellipse(at.x, at.y, 10,10);
-    
+
     at.diveq(width, height);
 
     setPointRate(1000);
@@ -51,15 +51,15 @@ void scanLaserEffects()
   }
   else if(laserEffectMode == 0)
   {
-    
+
   }
   else if(laserEffectMode == 0)
   {
-    
+
   }
   else if(laserEffectMode == 0)
   {
-    
+
   }
 }
 
@@ -83,8 +83,8 @@ void scanEdgeList(EdgeList edgeList) {
   addPoint(first.x,first.y);
 
   setColor(1);
-  
-  int scanType = 2;
+
+  int scanType = 3;
 
   int count = edgeList.loop.size();
   for(int i=0; i<count; ++i) {
@@ -106,12 +106,13 @@ void scanEdgeList(EdgeList edgeList) {
       if      (scanType == 0) scanBasic(from, to);
       else if (scanType == 1) scanLightning(from, to);
       else if (scanType == 2) scanDotted(from, to);
+      else if (scanType == 3) scanStarburst(from, to);
 
       last = to;
       addPoint(last.x, last.y);
     }
 
-  }  
+  }
 }
 
 void scanBasic(Vector2 from, Vector2 to)
@@ -154,6 +155,36 @@ void scanDotted(Vector2 from, Vector2 to)
       addPoint(at.x, at.y);
     }
 
+  }
+}
+
+void scanStarburst(Vector2 from, Vector2 to)
+{
+  setPointRate(5000);
+
+  Vector2 diff = to.sub(from);
+  int count = max(min((int)floor(diff.len() / 0.02), 32), 1);
+  float segLength = 1.0 / count;
+  float segOffset = segLength * ((animTime*3.0) % 1.0);
+  Vector2 offsetSegment = diff.mul(segOffset);
+  for(int i=0; i<=count; ++i)
+  {
+    float col = floor((animTime+i)%2);
+
+    float t = i / (float)count;
+    Vector2 at;
+    if (i == 0) {
+      at = from.add(offsetSegment);
+    } else if (i == count) {
+      at = to;
+    } else {
+      at = from.add(diff.mul(t).add(offsetSegment));
+    }
+    setColor(0,0,0);
+    addPoint(at.x, at.y);
+    setColor(0,1,1);
+    addPoint(0.65,0.2);
+    setColor(0,0,0);
   }
 }
 
