@@ -361,7 +361,7 @@ void oscEvent(OscMessage theOscMessage) {
 		//0.325 to 1.273
 		time = map(resolumeClipTime, 0, 0.484, 0.325, 1.273);
     laserEnabled = resolumeClipTime < 0.484;
-    println(resolumeClipTime);
+    //println(resolumeClipTime);
 
     int laserFirePointsEdgelist = 1;
 
