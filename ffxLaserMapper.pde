@@ -73,12 +73,12 @@ boolean         laserEnabled = false; // Used by animation
 	// - Scan effects need to go all the way to the last point in the list
 
 	// - Blank the laser before moving to the animated track location
-
+	// - Implement charging animation
 
 //------------------------------------------------
 // Todo:
 
-	// - Implement charging animation
+
 	// - Write some different laser animations
 
 
