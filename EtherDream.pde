@@ -1,9 +1,13 @@
 
 
 
-
+float nextUpdateTime;
 void updateEtherDream()
 {
+  // Wait until we need more data before update again
+  if (millis() < nextUpdateTime)
+    return;
+
   // if (etherdream != null && etherdream.available() > 0) { 
   //   byte[] byteBuffer = new byte[32];
   //   int byteCount = etherdream.readBytes(byteBuffer);
@@ -11,7 +15,7 @@ void updateEtherDream()
   //   parseDacStatus(byteBuffer, 0);
   // } 
 
-  beginPoints();
+  beginPoints(blankingPointRate);
 
   setColor(0,0,0);
   addPoint(-0.5,-0.5);
@@ -22,13 +26,13 @@ void updateEtherDream()
   if (laserMouse) {
     float mx = (float)mouseX/width;
     float my = (float)mouseY/height;
-    //clear();
-    
-    setColor(1,1,1);
-    for(int i=0; i<5; ++i)
-      addPoint(mx,my);
 
-    //clear();
+    addPoint(mx,my);
+    setColor(1,1,1);
+    addPoint(mx,my);
+    setColor(0,0,0);
+    addPoint(mx,my);
+
   }
 
   if (drawLaserAnimationPath) {
@@ -47,6 +51,8 @@ void updateEtherDream()
     //clear();
   }
 
+
+
   if (etherdream != null) {
     etherdream.write(commandPrepareStream());
 
@@ -62,6 +68,7 @@ void updateEtherDream()
     etherdream.write(commandBeginPlayback(0,pointRates[0].pointRate));
   }
   
+  colorMode(RGB,255);
   visualizeLaser();
 }
 
@@ -139,14 +146,18 @@ byte[] commandWriteData() {
   byteBuffer[1] = (byte)( pointCount       & 0xFF);
   byteBuffer[2] = (byte)((pointCount << 8) & 0xFF);
 
-
-  println("sending " + byteBuffer.length + " bytes.");
+  if (log)
+    println("Sending " + byteBuffer.length + " bytes.");
  
   // The first index (index zero) always stores just the initial point rate
   //  so we start looking for the second index
   int nextRateChangeIndex = 1;
-  
-  for(int i=0; i<pointCount; ++i) {
+
+  int pointsPerSecond = pointRates[0].pointRate;
+  int pointsAtRate = 0;
+  float timeTillNextUpdate = 0;
+
+  for(int i=0; i<pointCount; ++i, ++pointsAtRate) {
     //struct dac_point {
     //  uint16_t control;
     //  int16_t x;
@@ -165,7 +176,13 @@ byte[] commandWriteData() {
     boolean isPointRateChange = false;
     if (nextRateChangeIndex < pointRateChangeCount &&
         pointRates[nextRateChangeIndex].indexOfStart == i) {
+
       isPointRateChange = true;
+      
+      timeTillNextUpdate += (float)pointsAtRate / pointsPerSecond;
+      pointsPerSecond = pointRates[nextRateChangeIndex].pointRate;
+      pointsAtRate = 0;
+
       ++nextRateChangeIndex;
     }
     
@@ -194,6 +211,10 @@ byte[] commandWriteData() {
     byteBuffer[off+16] = 0;
     byteBuffer[off+17] = 0;
   }
+
+  timeTillNextUpdate += (float)pointsAtRate / pointsPerSecond;
+  pointsAtRate = 0;
+  nextUpdateTime = millis() + timeTillNextUpdate*1000.0f + 10; //10ms buffer to avoid flooding
   
   return byteBuffer;
 }
@@ -252,7 +273,10 @@ void clear()
     addPoint(last.x, last.y);
 }
 
-void beginPoints() {
+void beginPoints() { 
+  beginPoints(kDefaultPointRate);
+}
+void beginPoints(int pointRate) {
   if (points == null) {
     points = new PointData[kMaxPointData];
     for (int i=0; i<points.length; ++i)
@@ -266,9 +290,9 @@ void beginPoints() {
   }
 
   pointCount=0;
-  activePointRate = kDefaultPointRate;
+  activePointRate = pointRate;
   pointRateChangeCount=0;
-  pointRates[pointRateChangeCount++].pointRate = kDefaultPointRate;
+  pointRates[pointRateChangeCount++].pointRate = pointRate;
 
   setColor(0,0,0);
 }
@@ -288,7 +312,7 @@ void addPoint(float x, float y) {
   if( pointRateChangeCount < kMaxPointRateChangeData &&
       activePointRate != pointRates[pointRateChangeCount-1].pointRate )
   {
-    println("changing point rate ("+pointRateChangeCount+"): " + activePointRate);
+    //println("changing point rate ("+pointRateChangeCount+"): " + activePointRate);
     pointRates[pointRateChangeCount].pointRate    = activePointRate;
     pointRates[pointRateChangeCount].indexOfStart = pointCount;
     ++pointRateChangeCount;
@@ -310,8 +334,6 @@ void addPoint(float x, float y) {
 }
 
 
-
-
 void receive( byte[] data, String ip, int port )
 {
   if (etherdream == null) {
@@ -319,15 +341,13 @@ void receive( byte[] data, String ip, int port )
     etherdream = new Client(this, ip, 7765);
   }
   
-  //println("Recieved UDP data from: "+ip+" on port: "+port);
-  println("Recieved " + data.length + " bytes");
+  if (log)
+    println("Recieved " + data.length + " bytes of UDP data from: "+ip+" on port: "+port);
+
   if (data.length == 22)
     parseResponse(data, 0);
-  else if(data.length == 36)
+  else if (data.length == 36)
     parseBroadcast(data, 0);
-  
-  //String message = new String( data );
-  //println( "receive: \""+data+"\" from "+ip+" on port "+port );
 }
 
 void parseResponse(byte[] byteBuffer, int i) // 2 bytes + 20 byte status

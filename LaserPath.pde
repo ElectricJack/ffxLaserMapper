@@ -131,7 +131,7 @@ class LaserPath implements Serializable
       addPoint(first.x, first.y);
 
       setColor(1,1,1);
-      setPointRate(5000);
+      setPointRate(2500);
 
       int totalVerts = verts.size();
       for (int i=1; i<totalVerts; ++i) {
