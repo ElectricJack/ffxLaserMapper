@@ -259,7 +259,7 @@ void visualizeLaser() {
   
   strokeWeight(3);
   for(int i=0; i<pointCount-1; ++i) {
-    stroke(points[i].r / 256, points[i].g / 256, points[i].b / 256);
+    stroke(points[i+1].r / 256, points[i+1].g / 256, points[i+1].b / 256);
     float x0 = width  * ((points[i].x / 65535.0 + 0.5f) % 1); 
     float y0 = height * ((points[i].y / 65535.0 + 0.5f) % 1);
     float x1 = width  * ((points[i + 1].x / 65535.0 + 0.5f) % 1); 
